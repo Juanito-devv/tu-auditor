@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Tu Auditor · estilos custom (fuera del alcance de Tailwind)
+   ============================================================ */
+
+body {
+  font-family: "Public Sans", system-ui, sans-serif;
+  background-color: #fcf9f8;
+}
+
+/* Botones táctiles */
+.tactile-button {
+  border-bottom: 3px solid rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, border-width 0.1s;
+}
+.tactile-button:active {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+}
+.tactile-card {
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+  border: 1.5px solid #e5e2e1;
+}
+
+/* Barras táctiles del escáner */
+.tactile-button-primary {
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15), inset 0px -2px 0px rgba(0, 0, 0, 0.2);
+}
+.tactile-button-primary:active {
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(2px);
+}
+
+.tactile-btn-primary {
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15), inset 0px -2px 0px rgba(0, 0, 0, 0.2);
+}
+.tactile-btn-primary:active {
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(2px);
+}
+
+/* Escáner: esquinas + láser */
+@keyframes pulse-border {
+  0% { border-color: rgba(160, 243, 153, 0.4); }
+  50% { border-color: #1b6d24; }
+  100% { border-color: rgba(160, 243, 153, 0.4); }
+}
+@keyframes scan-line {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.scanner-corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-color: #1b6d24;
+  border-style: solid;
+  animation: pulse-border 2s infinite;
+}
+.scanner-tl { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
+.scanner-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
+.scanner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
+.scanner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
+.scan-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #a0f399;
+  box-shadow: 0 0 10px #a0f399;
+  animation: scan-line 3s linear infinite;
+}
+
+/* Donas de gráficos */
+.donut-chart {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.donut-inner {
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 10;
+}
+
+/* Línea de escaneo de la landing */
+@keyframes scan {
+  0% { top: 0; }
+  50% { top: 100%; }
+  100% { top: 0; }
+}

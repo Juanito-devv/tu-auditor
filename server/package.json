@@ -1,0 +1,17 @@
+{
+  "name": "inventario-server",
+  "version": "1.0.0",
+  "description": "Backend Node/Express que lee el maestro de inventario desde Google Sheets (Service Account)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "googleapis": "^140.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  }
+}

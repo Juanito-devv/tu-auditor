@@ -1,0 +1,16 @@
+{
+  "name": "tu-auditor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tu Auditor: migración de inventario AppSheet a web (React + Node/Express + Google Sheets)",
+  "scripts": {
+    "postinstall": "npm install --prefix server && npm install --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "node server/src/server.js",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

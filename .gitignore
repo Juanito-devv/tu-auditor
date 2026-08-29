@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Build de producción
+client/dist/
+dist/
+
+# Entorno y secretos (NUNCA subir)
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+server/*.json
+
+# Credenciales de Google (service account) - NUNCA subir
+inventario-api-*.json
+server/*auth*.json
+!**/package.json
+!**/package-lock.json
+!**/package.jsonc
+
+# Logs
+*.log
+npm-debug.log*
+vite-dev.log
+
+# Sistema
+.DS_Store
+Thumbs.db
