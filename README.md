@@ -11,7 +11,9 @@ Incluye: **landing**, **escáner con cámara**, **ficha del producto con rollup 
 ```
 inventario-web/
 ├─ client/   → Frontend React + Vite + Tailwind v3. Landing, escáner, detalle, gráficos, bottom nav.
-└─ server/   → Backend Node/Express. Lee Google Sheets con caché en memoria (5 min).
+├─ server/   → Backend Node/Express (dev local). Lee Google Sheets con caché en memoria (5 min).
+├─ workers/  → Backend desplegado en Cloudflare Workers (producción). API serverless.
+├─ docs/     → Especificación de Fase 2: migración a PostgreSQL (FASE2_POSTGRES.md).
 ```
 
 ---
