@@ -5,6 +5,7 @@ import {
   buscarConLotes,
   detallePorCodigo,
   getKPIs,
+  listArticulos,
   resetCache,
   configureWorkerEnv,
 } from "./sheets.js";
@@ -71,6 +72,16 @@ export default {
 
     if (path === "/api/kpis") {
       return wrap(async () => json(await getKPIs(), 200, cors))(request);
+    }
+
+    if (path === "/api/articulos") {
+      return wrap(async () => {
+        const url = new URL(request.url);
+        const page = url.searchParams.get("page") || "1";
+        const limit = url.searchParams.get("limit") || "50";
+        const q = url.searchParams.get("q") || "";
+        return json(await listArticulos({ page, limit, q }), 200, cors);
+      })(request);
     }
 
     const codigoMatch = path.match(/^\/api\/articulo\/codigo\/(.+)$/);

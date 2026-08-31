@@ -210,6 +210,38 @@ export async function buscarConLotes(term) {
   return getDetalleConLotes(articulo.codigo_articulo);
 }
 
+// Lista paginada del maestro para la vista admin (Inventory).
+// devuelve { total, page, limit, articulos: [...] }
+export async function listArticulos({ page = 1, limit = 50, q = "" } = {}) {
+  const maestro = await loadMaestro();
+  const query = String(q || "").trim().toLowerCase();
+  let lista = maestro.objs;
+  if (query) {
+    lista = lista.filter((a) => {
+      const d = (a.descripcion || "").toLowerCase();
+      const b = (a.codigo_barras || "").toLowerCase();
+      const c = (a.codigo_articulo || "").toLowerCase();
+      return d.includes(query) || b.includes(query) || c.includes(query);
+    });
+  }
+  const total = lista.length;
+  const limitN = Math.max(1, Math.min(Number(limit) || 50, 200));
+  const pageN = Math.max(1, Number(page) || 1);
+  const start = (pageN - 1) * limitN;
+  const slice = lista.slice(start, start + limitN).map((a) => ({
+    codigo_articulo: a.codigo_articulo,
+    codigo_barras: a.codigo_barras,
+    descripcion: a.descripcion,
+    categoria: a.categoria,
+    proveedor: a.proveedor,
+    stock: a.stock,
+    costo: a.costo,
+    precio_vigente: a.precio_vigente,
+    gravado: a.gravado,
+  }));
+  return { total, page: pageN, limit: limitN, articulos: slice };
+}
+
 export async function getKPIs() {
   const maestro = await loadMaestro();
   const inv = await loadInventario();

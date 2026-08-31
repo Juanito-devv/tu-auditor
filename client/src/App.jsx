@@ -7,6 +7,9 @@ import Detalle from "./pages/Detalle.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Ajustes from "./pages/Ajustes.jsx";
 import Operacion from "./pages/Operacion.jsx";
+import Admin from "./pages/Admin.jsx";
+import InventoryAdmin from "./pages/InventoryAdmin.jsx";
+import ReportesAdmin from "./pages/ReportesAdmin.jsx";
 
 export default function App() {
   return (
@@ -20,6 +23,9 @@ export default function App() {
         <Route path="/ajustes" element={<Ajustes />} />
         <Route path="/venta" element={<Operacion modo="venta" />} />
         <Route path="/ingreso" element={<Operacion modo="ingreso" />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/inventory" element={<InventoryAdmin />} />
+        <Route path="/admin/reportes" element={<ReportesAdmin />} />
       </Routes>
     </div>
   );
