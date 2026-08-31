@@ -1,11 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const PHONE_MOCK =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuC_oKy6CQ5HrleiMWPFyN6gMCyfZilBjlP8Cwx5KzEoe5cgR7LKXr-6kOsxYaJw6Z1xurswMci47f8g8JUCWJln6bk8iRS4ok33OYOQLqWFxsnVBHoZA_vS7YnTUn25HFjFKpdmrAVng3Dir1gXFuYa_HzyQDX4F_BIEzMc25M9LvPVCLtAxl2INSBFa6zAb4TAFZ-QA1F5BPE-s9qnzPI2lOZ2jEhOAqT1vorYsx5bsTJdCBFQmsOo";
+const PHONE_MOCK = "/mockups/phone.jpg";
 
-const DASH_MOCK =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA_b51gipnnjpr3SKCPaIv8YoV9ZM67-vCcWksJ0Rdu2F75aYhSm0qvA1ngQri7pFZ5mnFAd6aald8fffyPvKwY2dmGtYrypYc2C1V4IrYCykVPZJFpaWqUxsMaRXZVXUlsUnVlda4y5KEJF9GnWxb3638LvdVNN_IkILfA198LHbK6mofKm20v9hizG23qmKSHaTqOQmcVWTMEiDA-G0rriMDbeeX07rgx0coBsvKyXxZAnQP5a_SX";
+const DASH_MOCK = "/mockups/dashboard.jpg";
 
 function Material({ name, className = "" }) {
   return (

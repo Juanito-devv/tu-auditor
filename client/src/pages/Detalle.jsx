@@ -67,7 +67,7 @@ export default function Detalle() {
           <h1 className="font-headline-lg text-headline-lg">Buscando…</h1>
           <p className="text-on-surface-variant">Consultando el inventario.</p>
         </div>
-        <BottomNav activo="escanear" />
+        <BottomNav activo="inicio" />
       </>
     );
   }
@@ -88,7 +88,7 @@ export default function Detalle() {
             Volver a escanear
           </button>
         </div>
-        <BottomNav activo="escanear" />
+        <BottomNav activo="inicio" />
       </>
     );
   }
@@ -209,7 +209,7 @@ export default function Detalle() {
           </button>
         </section>
       </main>
-      <BottomNav activo="escanear" />
+      <BottomNav activo="inicio" />
     </>
   );
 }

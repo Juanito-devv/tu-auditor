@@ -33,7 +33,6 @@ export default function BottomNav({ activo }) {
     <nav className="fixed bottom-0 w-full h-[76px] z-50 border-t-[1.5px] border-surface-variant shadow-[0px_-2px_4px_rgba(0,0,0,0.15)]">
       <div className="fixed bottom-0 left-0 right-0 flex justify-around items-center px-section-margin bg-surface h-[76px]">
         <Tab to="/inicio" fill={activo === "inicio"} icono="home" etiqueta="Inicio" />
-        <Tab to="/inicio" fill={activo === "escanear"} icono="barcode_scanner" etiqueta="Escanear" />
         <Tab to="/graficos" fill={activo === "graficos"} icono="query_stats" etiqueta="Gráficos" />
         <Tab to="/ajustes" fill={activo === "ajustes"} icono="settings" etiqueta="Ajustes" />
       </div>
