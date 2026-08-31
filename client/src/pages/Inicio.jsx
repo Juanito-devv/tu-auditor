@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { apiFetch } from "../api.js";
 
 export default function Inicio() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function Inicio() {
 
   useEffect(() => {
     let activo = true;
-    fetch("/api/kpis")
+    apiFetch("/kpis")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (activo && d) setKpis(d);

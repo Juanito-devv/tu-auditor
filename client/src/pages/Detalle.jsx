@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { apiFetch } from "../api.js";
 
 function estadoStock(stock) {
   if (stock <= 10)
@@ -35,7 +36,7 @@ export default function Detalle() {
     let activo = true;
     setCargando(true);
     setError("");
-    fetch(`/api/articulo/${encodeURIComponent(term)}`)
+    apiFetch(`/articulo/${encodeURIComponent(term)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error("no_encontrado");
         return res.json();

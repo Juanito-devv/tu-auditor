@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { apiFetch } from "../api.js";
 
 function Donut({ datos, etiquetas, centro, colores, tam = 200, grosor = 28 }) {
   const total = datos.reduce((a, b) => a + b, 0) || 1;
@@ -67,7 +68,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     let activo = true;
-    fetch("/api/kpis")
+    apiFetch("/kpis")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (activo && d) setKpis(d);
