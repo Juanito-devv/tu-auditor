@@ -1,0 +1,6 @@
+# Config del frontend estático de Tu Auditor (Cloudflare Workers static assets)
+name = "tu-auditor-front"
+compatibility_date = "2025-01-01"
+
+# Sirve el build de Vite (client/dist) como assets estáticos puros + SPA fallback
+assets = { directory = "./client/dist", not_found_handling = "single-page-application" }
