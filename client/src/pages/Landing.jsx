@@ -98,9 +98,10 @@ function DashboardPreview({ kpis }) {
 
   const valor = kpis?.totales?.valor_inventario ?? null;
   const sc = kpis?.stock_critico ?? null;
-  const scTotal = sc ? sc.critico + sc.bajo + sc.normal : 1;
-  const salud = scTot(sc, scTotal);
   const imp = kpis?.impuestos ?? null;
+  const salud = sc && sc.critico + sc.bajo + sc.normal > 0
+    ? Math.round((sc.normal / (sc.critico + sc.bajo + sc.normal)) * 100)
+    : null;
 
   const PALETA = ["#005db8", "#3b82d0", "#7aa9e8", "#aac7ff", "#d6e3ff", "#56688a"];
 
@@ -182,10 +183,6 @@ function DashboardPreview({ kpis }) {
       </div>
     </div>
   );
-}
-
-function scTot(sc, total) {
-  return total ? Math.round((sc.normal / total) * 100) : 0;
 }
 
 function MiniKPI({ icono, color, titulo, valor }) {

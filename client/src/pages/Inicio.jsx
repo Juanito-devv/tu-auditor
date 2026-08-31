@@ -48,12 +48,26 @@ export default function Inicio() {
       // Esperar a que React renderice el div #scanner-host antes de iniciar
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       // Carga diferida: solo descarga html5-qrcode al abrir la cámara
-      const { Html5Qrcode } = await import("html5-qrcode");
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
+      // Solo códigos de barras 1D (ignora QR/datamatrix) → decodificación mucho más rápida
+      const SOLO_BARRAS = [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.ITF,
+      ];
       const scanner = new Html5Qrcode("scanner-host");
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: (w, h) => ({ width: Math.min(w * 0.75, 300), height: Math.min(h * 0.45, 200) }) },
+        {
+          fps: 12,
+          qrbox: (w, h) => ({ width: Math.min(w * 0.72, 280), height: Math.min(h * 0.3, 140) }),
+          formatsToSupport: SOLO_BARRAS,
+        },
         (decodedText) => {
           irAlArticulo(decodedText);
         },
@@ -105,7 +119,14 @@ export default function Inicio() {
         </div>
 
         {/* Escáner */}
-        <div className="relative w-full aspect-[4/5] sm:aspect-square bg-inverse-surface rounded-xl overflow-hidden border-[1.5px] border-surface-variant shadow-[0px_2px_4px_rgba(0,0,0,0.15)] flex-grow flex flex-col items-center justify-center">
+        <div
+          className={
+            "relative w-full overflow-hidden border-[1.5px] border-surface-variant shadow-[0px_2px_4px_rgba(0,0,0,0.15)] bg-inverse-surface flex items-center justify-center " +
+            (estado === "inicial"
+              ? "rounded-xl aspect-[16/10] sm:aspect-video"
+              : "flex-grow aspect-[4/5] sm:aspect-square rounded-xl")
+          }
+        >
           {(estado === "activo" || estado === "buscando") && (
             <div
               id="scanner-host"
@@ -155,7 +176,12 @@ export default function Inicio() {
         )}
 
         {/* Controles */}
-        <div className="flex flex-col gap-element-gap mt-auto pt-4">
+        <div
+          className={
+            "flex flex-col gap-element-gap " +
+            (estado === "inicial" ? "pt-4" : "mt-auto pt-4")
+          }
+        >
           {estado === "inicial" && (
             <button
               className="w-full bg-primary text-on-primary font-button-text text-button-text min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 tactile-btn-primary border-[1.5px] border-primary-container transition-transform duration-100"
