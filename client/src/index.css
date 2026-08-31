@@ -8,45 +8,55 @@
 
 body {
   font-family: "Public Sans", system-ui, sans-serif;
-  background-color: #fcf9f8;
+  background-color: #faf9fd;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Botones táctiles */
 .tactile-button {
-  border-bottom: 3px solid rgba(0, 0, 0, 0.2);
-  transition: transform 0.1s, border-width 0.1s;
+  border-bottom: 3px solid rgba(0, 0, 0, 0.12);
+  transition: transform 0.1s, border-width 0.1s, box-shadow 0.15s;
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.08);
+}
+.tactile-button:hover {
+  box-shadow: 0px 4px 8px rgba(16, 24, 40, 0.12);
 }
 .tactile-button:active {
   transform: translateY(2px);
   border-bottom-width: 1px;
 }
 .tactile-card {
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
-  border: 1.5px solid #e5e2e1;
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.06), 0px 1px 3px rgba(16, 24, 40, 0.10);
+  border: 1.5px solid #e3e2e6;
+  transition: box-shadow 0.15s ease;
+}
+.tactile-card:hover {
+  box-shadow: 0px 4px 8px rgba(16, 24, 40, 0.12), 0px 2px 4px rgba(16, 24, 40, 0.08);
 }
 
 /* Barras táctiles del escáner */
 .tactile-button-primary {
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15), inset 0px -2px 0px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.08), inset 0px -2px 0px rgba(0, 0, 0, 0.12);
 }
 .tactile-button-primary:active {
-  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.12);
   transform: translateY(2px);
 }
 
 .tactile-btn-primary {
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15), inset 0px -2px 0px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.08), inset 0px -2px 0px rgba(0, 0, 0, 0.12);
 }
 .tactile-btn-primary:active {
-  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.12);
   transform: translateY(2px);
 }
 
 /* Escáner: esquinas + láser */
 @keyframes pulse-border {
-  0% { border-color: rgba(160, 243, 153, 0.4); }
-  50% { border-color: #1b6d24; }
-  100% { border-color: rgba(160, 243, 153, 0.4); }
+  0% { border-color: rgba(170, 199, 255, 0.45); }
+  50% { border-color: #005db8; }
+  100% { border-color: rgba(170, 199, 255, 0.45); }
 }
 @keyframes scan-line {
   0% { top: 0%; opacity: 0; }
@@ -58,21 +68,21 @@ body {
   position: absolute;
   width: 40px;
   height: 40px;
-  border-color: #1b6d24;
+  border-color: #005db8;
   border-style: solid;
   animation: pulse-border 2s infinite;
 }
-.scanner-tl { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
-.scanner-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
-.scanner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
-.scanner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
+.scanner-tl { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 10px; }
+.scanner-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 10px; }
+.scanner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 10px; }
+.scanner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 10px; }
 .scan-laser {
   position: absolute;
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #a0f399;
-  box-shadow: 0 0 10px #a0f399;
+  background-color: #aac7ff;
+  box-shadow: 0 0 10px #aac7ff;
   animation: scan-line 3s linear infinite;
 }
 
@@ -99,4 +109,11 @@ body {
   0% { top: 0; }
   50% { top: 100%; }
   100% { top: 0; }
+}
+
+@keyframes scanline {
+  0% { top: 8%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 90%; opacity: 0; }
 }

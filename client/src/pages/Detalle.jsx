@@ -14,7 +14,7 @@ function estadoStock(stock) {
   if (stock <= 25)
     return {
       texto: "BAJO",
-      chip: "bg-[#fff3e0] border-[1.5px] border-[#b26a00] text-[#7c4a00]",
+      chip: "bg-[#fff3e0] border-[1.5px] border-[#b26a00] text-[#7a4a00]",
       icono: "error",
     };
   return {
