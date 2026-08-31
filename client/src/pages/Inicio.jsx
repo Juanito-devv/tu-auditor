@@ -6,17 +6,12 @@ import { apiFetch } from "../api.js";
 
 export default function Inicio() {
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const detenerRef = useRef(false);
+  const scannerRef = useRef(null);
 
   const [kpis, setKpis] = useState(null);
   const [estado, setEstado] = useState("inicial"); // inicial | activo | buscando | error | exito
   const [errorMsg, setErrorMsg] = useState("");
   const [manual, setManual] = useState("");
-
-  const soportaDetector =
-    typeof window !== "undefined" && "BarcodeDetector" in window;
 
   useEffect(() => {
     let activo = true;
@@ -28,80 +23,56 @@ export default function Inicio() {
       .catch(() => {});
     return () => {
       activo = false;
-      detenerRef.current = true;
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+      detenerScanner();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function detenerScanner() {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+      } catch (_) {}
+      try {
+        scannerRef.current.clear();
+      } catch (_) {}
+      scannerRef.current = null;
+    }
+  }
 
   async function abrirCamara() {
     setEstado("activo");
     setErrorMsg("");
-    detenerRef.current = false;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      if (soportaDetector) detectorLoop();
+      if (scannerRef.current) await detenerScanner();
+      // Esperar a que React renderice el div #scanner-host antes de iniciar
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      // Carga diferida: solo descarga html5-qrcode al abrir la cámara
+      const { Html5Qrcode } = await import("html5-qrcode");
+      const scanner = new Html5Qrcode("scanner-host");
+      scannerRef.current = scanner;
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: (w, h) => ({ width: Math.min(w * 0.75, 300), height: Math.min(h * 0.45, 200) }) },
+        (decodedText) => {
+          irAlArticulo(decodedText);
+        },
+        () => {}
+      );
     } catch (e) {
       setEstado("error");
       setErrorMsg("No pudimos abrir la cámara. Ingresa el código manualmente.");
     }
   }
 
-  async function detectorLoop() {
-    try {
-      const detector = new window.BarcodeDetector({
-        formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf"],
-      });
-      while (videoRef.current && !detenerRef.current && estado !== "exito") {
-        try {
-          if (videoRef.current.readyState >= 2) {
-            const c = await detector.detect(videoRef.current);
-            if (c && c.length > 0) {
-              irAlArticulo(c[0].rawValue);
-              return;
-            }
-          }
-        } catch (_) {}
-        await new Promise((r) => setTimeout(r, 250));
-      }
-    } catch (_) {}
-  }
-
-  async function capturar() {
-    if (!soportaDetector) {
-      setEstado("error");
-      setErrorMsg("Tu navegador no soporta detección automática. Ingresa el código manualmente.");
-      return;
-    }
-    setEstado("buscando");
-    try {
-      const detector = new window.BarcodeDetector();
-      const c = await detector.detect(videoRef.current);
-      if (c && c.length > 0) {
-        irAlArticulo(c[0].rawValue);
-        return;
-      }
-      setEstado("activo");
-    } catch (_) {
-      setEstado("activo");
-    }
-  }
-
   function irAlArticulo(valor) {
-    detenerRef.current = true;
-    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    detenerScanner();
+    setEstado("exito");
     navigate(`/detalle/${encodeURIComponent(valor)}`);
   }
 
   function cerrarCamara() {
-    detenerRef.current = true;
-    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    detenerScanner();
     setEstado("inicial");
   }
 
@@ -135,16 +106,12 @@ export default function Inicio() {
 
         {/* Escáner */}
         <div className="relative w-full aspect-[4/5] sm:aspect-square bg-inverse-surface rounded-xl overflow-hidden border-[1.5px] border-surface-variant shadow-[0px_2px_4px_rgba(0,0,0,0.15)] flex-grow flex flex-col items-center justify-center">
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            className={
-              estado === "activo" || estado === "buscando"
-                ? "absolute inset-0 w-full h-full object-cover"
-                : "hidden"
-            }
-          />
+          {(estado === "activo" || estado === "buscando") && (
+            <div
+              id="scanner-host"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
           {(estado === "activo" || estado === "buscando") && (
             <>
               <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
@@ -198,17 +165,6 @@ export default function Inicio() {
                 photo_camera
               </span>
               Activar cámara
-            </button>
-          )}
-          {estado === "activo" && soportaDetector && (
-            <button
-              className="w-full bg-primary text-on-primary font-button-text text-button-text min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 tactile-btn-primary border-[1.5px] border-primary-container transition-transform duration-100"
-              onClick={capturar}
-            >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                camera
-              </span>
-              Capturar código
             </button>
           )}
           {(estado === "activo" || estado === "buscando") && (
