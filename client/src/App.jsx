@@ -6,6 +6,7 @@ import Scanner from "./pages/Scanner.jsx";
 import Detalle from "./pages/Detalle.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Ajustes from "./pages/Ajustes.jsx";
+import Operacion from "./pages/Operacion.jsx";
 
 export default function App() {
   return (
@@ -17,6 +18,8 @@ export default function App() {
         <Route path="/detalle/:term" element={<Detalle />} />
         <Route path="/graficos" element={<Dashboard />} />
         <Route path="/ajustes" element={<Ajustes />} />
+        <Route path="/venta" element={<Operacion modo="venta" />} />
+        <Route path="/ingreso" element={<Operacion modo="ingreso" />} />
       </Routes>
     </div>
   );

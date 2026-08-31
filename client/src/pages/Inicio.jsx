@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { apiFetch } from "../api.js";
@@ -120,6 +120,24 @@ export default function Inicio() {
               {alertas}
             </span>
           </div>
+        </div>
+
+        {/* Accesos rápidos: Venta / Ingreso */}
+        <div className="grid grid-cols-2 gap-gutter">
+          <Link
+            to="/venta"
+            className="bg-[#10A760] text-white font-button-text text-button-text text-sm min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 tactile-btn-primary active:translate-y-[2px] transition-transform"
+          >
+            <span className="material-symbols-outlined">point_of_sale</span>
+            Vender
+          </Link>
+          <Link
+            to="/ingreso"
+            className="bg-primary text-on-primary font-button-text text-button-text text-sm min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 tactile-btn-primary active:translate-y-[2px] transition-transform"
+          >
+            <span className="material-symbols-outlined">add_box</span>
+            Ingresar
+          </Link>
         </div>
 
         {/* Escáner */}
