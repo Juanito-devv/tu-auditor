@@ -64,8 +64,12 @@ export default function Inicio() {
       await scanner.start(
         { facingMode: "environment" },
         {
-          fps: 12,
-          qrbox: (w, h) => ({ width: Math.min(w * 0.72, 280), height: Math.min(h * 0.3, 140) }),
+          fps: 10,
+          aspectRatio: { width: 3, height: 4 },
+          qrbox: (w, h) => ({
+            width: Math.min(w * 0.94, 340),
+            height: Math.min(h * 0.92, 240),
+          }),
           formatsToSupport: SOLO_BARRAS,
         },
         (decodedText) => {
@@ -145,7 +149,7 @@ export default function Inicio() {
                 <div className="scanner-corner scanner-bl rounded-bl-lg"></div>
                 <div className="scanner-corner scanner-br rounded-br-lg"></div>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="material-symbols-outlined text-white/50 text-4xl">qr_code_scanner</span>
+                  <span className="material-symbols-outlined text-white/50 text-4xl">barcode_scanner</span>
                 </div>
               </div>
             </>
@@ -154,7 +158,7 @@ export default function Inicio() {
           {estado === "inicial" && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center px-6">
-                <span className="material-symbols-outlined text-white/60 text-6xl mb-4">qr_code_scanner</span>
+                <span className="material-symbols-outlined text-white/60 text-6xl mb-4">barcode_scanner</span>
                 <p className="font-label-lg text-label-lg text-on-primary">
                   Activa la cámara para escanear
                 </p>
@@ -164,7 +168,7 @@ export default function Inicio() {
 
           {estado === "activo" && (
             <p className="absolute bottom-3 left-0 right-0 text-center text-white font-label-lg text-label-lg px-4 z-10 shadow-sm drop-shadow-md">
-              Alinea el código de barras o QR dentro del marco
+              Alinea el código de barras dentro del marco
             </p>
           )}
         </div>
