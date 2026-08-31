@@ -63,21 +63,33 @@ function Barras() {
 
 function Laser() {
   const ref = useRef();
+  const haz = useRef();
   useFrame(({ clock }) => {
     const t = (clock.getElapsedTime() * 1.4) % 1;
-    const x = THREE.MathUtils.lerp(-0.42, 0.42, t);
+    const x = THREE.MathUtils.lerp(-0.44, 0.44, t);
     if (ref.current) {
       ref.current.position.x = x;
-      ref.current.position.z = 0.62;
+      ref.current.position.z = 0.66;
+    }
+    if (haz.current) {
+      haz.current.position.x = x * 0.6;
+      haz.current.position.z = 0.66;
     }
   });
   return (
     <group>
-      {/* haz vertical */}
+      {/* haz vertical principal */}
       <mesh ref={ref}>
-        <boxGeometry args={[0.02, 0.9, 0.02]} />
+        <boxGeometry args={[0.025, 1.1, 0.02]} />
         <meshBasicMaterial color={CIAN} toneMapped={false} />
       </mesh>
+      {/* cola de luz ancha sutil */}
+      <mesh ref={haz}>
+        <planeGeometry args={[0.06, 1.05]} />
+        <meshBasicMaterial color={CIAN} transparent opacity={0.35} toneMapped={false} depthWrite={false} />
+      </mesh>
+      {/* punto brillante en el cubo */}
+      <pointLight position={[0, 0, 1.2]} color={CIAN} intensity={1.4} distance={4} />
     </group>
   );
 }
@@ -96,13 +108,14 @@ function ProductoPrincipal() {
       <CajaConPares
         position={[0, 0, 0]}
         conBarras
+        escala={1.35}
         color={SUPERFICIE}
         rough={0.18}
         metal={0.55}
       />
       {/* cubos flotantes acompañantes */}
-      <CajaConPares position={[1.55, 0.75, -0.4]} color={AZUL} escala={0.42} />
-      <CajaConPares position={[-1.5, -0.7, -0.3]} color={AZUL_CLARO} escala={0.5} />
+      <CajaConPares position={[1.95, 1.0, -0.6]} color={AZUL} escala={0.55} />
+      <CajaConPares position={[-1.9, -0.9, -0.5]} color={AZUL_CLARO} escala={0.66} />
       <Laser />
     </group>
   );
@@ -112,7 +125,7 @@ export default function Hero3D({ className = "" }) {
   return (
     <div className={"relative " + className}>
       <Canvas
-        camera={{ position: [0, 0, 6.5], fov: 38 }}
+        camera={{ position: [0, 0.6, 6.8], fov: 45 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true }}
       >

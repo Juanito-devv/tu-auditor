@@ -235,50 +235,55 @@ export default function Landing() {
 
       <main className="w-full max-w-7xl mx-auto">
         {/* 1. HERO */}
-        <section className="px-section-margin pt-10 pb-14 md:py-20 flex flex-col lg:flex-row items-center gap-10">
-          <div className="w-full lg:w-1/2 flex flex-col gap-5 text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 self-center lg:self-start bg-primary/10 text-primary font-button-text text-button-text text-sm px-3 py-1.5 rounded-full w-fit">
-              <Material name="bolt" className="text-base" />
-              Inventario rápido, decisiones seguras
-            </span>
-            <h1 className="font-display-lg text-display-lg text-on-surface leading-[1.1] tracking-tight">
-              Escanea.
-              <br />
-              Cuenta.
-              <br />
-              <span className="text-primary">Decide.</span>
-            </h1>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto lg:mx-0">
-              Control de inventario diseñado para equipos que necesitan precisión:
-              escaneo continuo, tomas por lote y vencimientos, y paneles que te dicen
-              exactamente qué reponer.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mt-2">
-              <Link
-                to="/inicio"
-                className="tactile-button bg-primary text-on-primary font-button-text text-button-text h-[56px] px-8 rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto"
-              >
-                <Material name="barcode_scanner" />
-                Comenzar Prueba
-              </Link>
-              <Link
-                to="/graficos"
-                className="bg-surface text-primary border-2 border-primary font-button-text text-button-text h-[56px] px-8 rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto hover:bg-primary/5 transition-colors"
-              >
-                Ver Demo
-              </Link>
-            </div>
+        <section className="relative overflow-hidden px-section-margin pt-10 pb-14 md:py-20">
+          {/* Fondo 3D a pantalla ancha */}
+          <div className="absolute inset-0 -z-0 pointer-events-none" aria-hidden>
+            <Suspense fallback={null}>
+              <Hero3D className="w-full h-full" transparent />
+            </Suspense>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
           </div>
 
-          <div className="w-full lg:w-1/2 relative flex justify-center items-center min-h-[420px]">
-            <div className="absolute -inset-4 pointer-events-none">
-              <Suspense fallback={null}>
-                <Hero3D className="w-full h-full" />
-              </Suspense>
+          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-10">
+            <div className="w-full lg:w-1/2 flex flex-col gap-5 text-center lg:text-left">
+              <span className="inline-flex items-center gap-2 self-center lg:self-start bg-primary/10 text-primary font-button-text text-button-text text-sm px-3 py-1.5 rounded-full w-fit">
+                <Material name="bolt" className="text-base" />
+                Inventario rápido, decisiones seguras
+              </span>
+              <h1 className="font-display-lg text-display-lg text-on-surface leading-[1.1] tracking-tight">
+                Escanea.
+                <br />
+                Cuenta.
+                <br />
+                <span className="text-primary">Decide.</span>
+              </h1>
+              <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto lg:mx-0">
+                Control de inventario diseñado para equipos que necesitan precisión:
+                escaneo continuo, tomas por lote y vencimientos, y paneles que te dicen
+                exactamente qué reponer.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mt-2">
+                <Link
+                  to="/inicio"
+                  className="tactile-button bg-primary text-on-primary font-button-text text-button-text h-[56px] px-8 rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto"
+                >
+                  <Material name="barcode_scanner" />
+                  Comenzar Prueba
+                </Link>
+                <Link
+                  to="/graficos"
+                  className="bg-surface text-primary border-2 border-primary font-button-text text-button-text h-[56px] px-8 rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto hover:bg-primary/5 transition-colors"
+                >
+                  Ver Demo
+                </Link>
+              </div>
             </div>
-            <div className="relative z-10">
-              <div className="absolute -inset-6 bg-primary/10 rounded-[3rem] blur-3xl" aria-hidden />
-              <PhoneMock kpis={kpis} />
+
+            <div className="w-full lg:w-1/2 relative flex justify-center items-center">
+              <div className="relative">
+                <div className="absolute -inset-6 bg-surface/60 rounded-[3rem] blur-3xl" aria-hidden />
+                <PhoneMock kpis={kpis} />
+              </div>
             </div>
           </div>
         </section>
