@@ -7,8 +7,8 @@
    ============================================================ */
 
 body {
-  font-family: "Public Sans", system-ui, sans-serif;
-  background-color: #faf9fd;
+  font-family: "Inter", "Public Sans", system-ui, sans-serif;
+  background-color: #f0f1f3;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { apiFetch } from "../api.js";
+import { cerrarSesion } from "../lib/auth.js";
 
 function Material({ name, className = "" }) {
   return <span className={`material-symbols-outlined ${className}`}>{name}</span>;
@@ -69,7 +70,7 @@ function Sidebar({ activo }) {
       </nav>
       <div className="p-3">
         <button
-          onClick={() => navigate("/inicio")}
+          onClick={() => { cerrarSesion(); navigate("/login"); }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#48505E] hover:bg-[#F0F1F3]"
         >
           <Material name="logout" className="text-[20px]" />

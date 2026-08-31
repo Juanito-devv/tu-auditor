@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api.js";
+import { cerrarSesion } from "../lib/auth.js";
 
 function Material({ name, className = "" }) {
   return <span className={`material-symbols-outlined ${className}`}>{name}</span>;
@@ -66,7 +67,7 @@ export default function InventoryAdmin() {
           <NavBtn onClick={() => navigate("/admin/reportes")} icono="monitoring" label="Reportes" />
         </nav>
         <div className="p-3">
-          <NavBtn onClick={() => navigate("/inicio")} icono="logout" label="Salir" />
+          <NavBtn onClick={() => { cerrarSesion(); navigate("/login"); }} icono="logout" label="Salir" />
         </div>
       </aside>
 

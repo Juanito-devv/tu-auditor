@@ -88,6 +88,13 @@ export default function Landing() {
           </nav>
           <div className="hidden md:flex items-center gap-3">
             <Link
+              to="/login"
+              className="text-sm font-semibold h-10 px-5 rounded-lg flex items-center gap-2 border border-[#D0D3D9] text-[#48505E] hover:bg-[#F0F1F3] hover:text-[#1366D9] transition-colors"
+            >
+              <Material name="login" className="text-base" />
+              Iniciar sesión
+            </Link>
+            <Link
               to="/inicio"
               className="bg-[#1366D9] text-white text-sm font-semibold h-10 px-5 rounded-lg flex items-center gap-2 hover:bg-[#0f56b6] transition-colors shadow-sm"
             >
@@ -109,6 +116,9 @@ export default function Landing() {
             <a href="#que-hacemos" onClick={() => setMenu(false)} className="text-[#48505E] font-medium">Qué hacemos</a>
             <a href="#como-funciona" onClick={() => setMenu(false)} className="text-[#48505E] font-medium">Cómo funciona</a>
             <a href="#resultados" onClick={() => setMenu(false)} className="text-[#48505E] font-medium">Resultados</a>
+            <Link to="/login" onClick={() => setMenu(false)} className="text-[#1366D9] font-semibold flex items-center gap-2 mt-1">
+              <Material name="login" className="text-base" /> Iniciar sesión
+            </Link>
             <Link to="/inicio" onClick={() => setMenu(false)} className="bg-[#1366D9] text-white text-sm font-semibold h-11 px-5 rounded-lg flex items-center justify-center gap-2 mt-1">
               <Material name="barcode_scanner" className="text-base" />
               Probar DEMO
