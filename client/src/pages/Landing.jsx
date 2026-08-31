@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, Suspense, lazy } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../api.js";
+
+const Hero3D = lazy(() => import("../components/Hero3D.jsx"));
 
 function Material({ name, className = "" }) {
   return (
@@ -268,8 +270,13 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="w-full lg:w-1/2 relative flex justify-center">
-            <div className="relative">
+          <div className="w-full lg:w-1/2 relative flex justify-center items-center min-h-[420px]">
+            <div className="absolute -inset-4 pointer-events-none">
+              <Suspense fallback={null}>
+                <Hero3D className="w-full h-full" />
+              </Suspense>
+            </div>
+            <div className="relative z-10">
               <div className="absolute -inset-6 bg-primary/10 rounded-[3rem] blur-3xl" aria-hidden />
               <PhoneMock kpis={kpis} />
             </div>
