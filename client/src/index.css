@@ -123,3 +123,32 @@ body {
   85% { opacity: 1; }
   100% { top: 90%; opacity: 0; }
 }
+
+/* Landing KANBAN: tipografía y animaciones */
+.landing-kanban {
+  font-family: "Inter", system-ui, sans-serif;
+}
+.landing-kanban .lk-card {
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+.landing-kanban .lk-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+@keyframes lk-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.lk-float { animation: lk-float 5s ease-in-out infinite; }
+@keyframes lk-fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.lk-fade-up { animation: lk-fade-up 0.7s ease both; }
