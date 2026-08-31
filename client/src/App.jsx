@@ -33,8 +33,7 @@ export default function App() {
         <Route path="/detalle/:term" element={<Detalle />} />
         <Route path="/graficos" element={<Dashboard />} />
         <Route path="/ajustes" element={<Ajustes />} />
-        <Route path="/venta" element={<Operacion modo="venta" />} />
-        <Route path="/ingreso" element={<Operacion modo="ingreso" />} />
+        <Route path="/ingreso" element={<Operacion />} />
         <Route path="/admin" element={<RequerirPanel><Admin /></RequerirPanel>} />
         <Route path="/admin/inventory" element={<RequerirPanel><InventoryAdmin /></RequerirPanel>} />
         <Route path="/admin/reportes" element={<RequerirPanel><ReportesAdmin /></RequerirPanel>} />

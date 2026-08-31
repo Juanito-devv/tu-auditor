@@ -3,7 +3,7 @@
 // Modelo:
 //   - La app demo es de acceso público (cualquiera entra al escáner desde la
 //     landing con "Probar DEMO").
-//   - El PANEL administrativo (/admin*, /venta, /ingreso) exige sesión.
+//   - El PANEL administrativo (/admin*) exige sesión (guard RequerirPanel en App.jsx).
 //   - Hay un usuario ADMIN para desarrolladores que SIEMPRE entra al panel.
 //   - Un cliente que aún NO adquirió el producto (rol "cliente" sin plan) NO
 //     entra al panel: solo ve la demo.

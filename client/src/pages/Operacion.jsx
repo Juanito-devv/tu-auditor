@@ -1,29 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api.js";
-import { registrarVenta, registrarIngreso } from "../lib/ops.js";
+import { registrarIngreso } from "../lib/ops.js";
 
-const MODO = {
-  venta: { titulo: "Caja · Venta", verbo: "Cobrar", icono: "point_of_sale", accent: "#10A760", buscaStock: true },
-  ingreso: { titulo: "Ingreso · Agregar", verbo: "Registrar Ingreso", icono: "add_box", accent: "#1366D9", buscaStock: false },
-};
+// Página de INGRESO / AGREGAR stock. Escanea o busca un producto, indica cuántas
+// unidades entran al inventario y lo registra. (El módulo de VENTA se retiró:
+// no se integró con el sistema de cobro/factura fiscal del cajero.)
 
-function fmtBs(n) {
-  return "Bs " + Number(n || 0).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-export default function Operacion({ modo: modoKey }) {
+export default function Ingreso() {
   const navigate = useNavigate();
-  const cfg = MODO[modoKey] || MODO.venta;
   const scannerRef = useRef(null);
 
-  const [items, setItems] = useState([]); // {codigo, descripcion, precio, cantidad, stock}
+  const [items, setItems] = useState([]); // {codigo, descripcion, cantidad}
   const [estadoScan, setEstadoScan] = useState("inicial"); // inicial|activo|buscando|error
   const [codigo, setCodigo] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [aviso, setAviso] = useState("");
-  const [ticket, setTicket] = useState(null); // {n, items, total}
-  const [pagando, setPagando] = useState(false);
+  const [ticket, setTicket] = useState(null); // {n, items}
 
   useEffect(() => {
     return () => detenerScanner();
@@ -40,13 +33,6 @@ export default function Operacion({ modo: modoKey }) {
 
   function agregarProducto(art, cantidad) {
     if (!art) return;
-    if (cfg.buscaStock) {
-      const stock = Number(art.stock) || 0;
-      if (cantidad > stock) {
-        setAviso(`Solo hay ${stock} en stock de "${art.descripcion}".`);
-        return;
-      }
-    }
     setAviso("");
     setItems((prev) => {
       const i = prev.findIndex((x) => x.codigo === art.codigo_articulo);
@@ -58,9 +44,7 @@ export default function Operacion({ modo: modoKey }) {
       return [...prev, {
         codigo: art.codigo_articulo,
         descripcion: art.descripcion || "Sin descripción",
-        precio: Number(art.precio_vigente) || 0,
         cantidad,
-        stock: Number(art.stock) || 0,
       }];
     });
   }
@@ -118,10 +102,6 @@ export default function Operacion({ modo: modoKey }) {
       if (i !== idx) return it;
       const nueva = it.cantidad + delta;
       if (nueva <= 0) return it;
-      if (cfg.buscaStock && nueva > it.stock) {
-        setAviso(`Máximo disponible: ${it.stock}`);
-        return it;
-      }
       return { ...it, cantidad: nueva };
     }));
   }
@@ -130,32 +110,27 @@ export default function Operacion({ modo: modoKey }) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  const total = items.reduce((a, i) => a + i.precio * i.cantidad, 0);
+  const totalUnidades = items.reduce((a, i) => a + i.cantidad, 0);
 
-  async function cobrar() {
+  async function registrar() {
     if (items.length === 0) return;
-    setPagando(true);
-    const fn = modoKey === "ingreso" ? registrarIngreso : registrarVenta;
-    const n = (await fn({ items })).ticket;
-    setPagando(false);
-    setTicket({ n, items, total, venta: modoKey !== "ingreso" });
+    const n = (await registrarIngreso({ items })).ticket;
+    setTicket({ n, items });
   }
 
-  function nuevaOperacion() {
+  function nuevoIngreso() {
     setTicket(null);
     setItems([]);
     setAviso("");
   }
 
-  // Pantalla de ticket
+  // Pantalla de confirmación
   if (ticket) {
     return (
       <div className="min-h-screen bg-surface flex flex-col">
-        <header className="bg-[#10A760] text-white px-container-padding py-6 flex flex-col items-center gap-1">
+        <header className="bg-[#1366D9] text-white px-container-padding py-6 flex flex-col items-center gap-1">
           <span className="material-symbols-outlined text-5xl">check_circle</span>
-          <h1 className="font-headline-md text-headline-md font-bold">
-            {ticket.venta ? "Venta registrada" : "Ingreso registrado"}
-          </h1>
+          <h1 className="font-headline-md text-headline-md font-bold">Ingreso registrado</h1>
           <span className="text-white/90">{ticket.n}</span>
         </header>
         <main className="max-w-xl mx-auto w-full p-container-padding space-y-4">
@@ -164,23 +139,21 @@ export default function Operacion({ modo: modoKey }) {
               <div key={i} className="flex justify-between items-center py-3 border-b border-surface-variant last:border-0">
                 <div className="flex-1 pr-3">
                   <p className="font-label-lg text-label-lg text-sm">{it.descripcion}</p>
-                  <p className="text-on-surface-variant text-sm">
-                    {it.cantidad} x {fmtBs(it.precio)}
-                  </p>
+                  <p className="text-on-surface-variant text-sm">{it.codigo}</p>
                 </div>
-                <span className="font-metric-lg text-metric-lg">{fmtBs(it.precio * it.cantidad)}</span>
+                <span className="font-metric-lg text-metric-lg">+{it.cantidad}</span>
               </div>
             ))}
             <div className="flex justify-between items-center pt-4 mt-2 border-t-2 border-surface-variant">
-              <span className="font-headline-md text-headline-md">Total</span>
-              <span className="font-metric-xl text-metric-xl text-primary">{fmtBs(ticket.total)}</span>
+              <span className="font-headline-md text-headline-md">Unidades</span>
+              <span className="font-metric-xl text-metric-xl text-primary">+{totalUnidades}</span>
             </div>
           </section>
           <button
             className="w-full bg-primary text-on-primary font-button-text text-button-text h-[56px] rounded-lg tactile-button-primary"
-            onClick={nuevaOperacion}
+            onClick={nuevoIngreso}
           >
-            Nueva {ticket.venta ? "venta" : "operación"}
+            Nuevo ingreso
           </button>
           <button
             className="w-full bg-surface text-primary border-2 border-primary font-button-text text-button-text h-[56px] rounded-lg"
@@ -204,10 +177,10 @@ export default function Operacion({ modo: modoKey }) {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div className="flex-1">
-          <h1 className="font-headline-md text-headline-md text-primary leading-tight">{cfg.titulo}</h1>
+          <h1 className="font-headline-md text-headline-md text-primary leading-tight">Ingreso · Agregar</h1>
         </div>
         <span className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-          <span className={`material-symbols-outlined`}>{cfg.icono}</span>
+          <span className="material-symbols-outlined">add_box</span>
         </span>
       </header>
 
@@ -223,7 +196,7 @@ export default function Operacion({ modo: modoKey }) {
           {estadoScan === "inicial" && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center px-6">
-                <span className="material-symbols-outlined text-white/60 text-5xl mb-2">barcode_scanner</span>
+                <span className="material-symbols-outlined text-white/60 text-5xl mb-2">add_box</span>
                 <p className="text-white font-label-lg text-label-lg">Escanea un producto</p>
               </div>
             </div>
@@ -273,11 +246,11 @@ export default function Operacion({ modo: modoKey }) {
           </div>
         )}
 
-        {/* Carrito */}
+        {/* Lista de productos a ingresar */}
         <section className="bg-surface rounded-xl tactile-card p-container-padding">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="font-headline-md text-headline-md text-primary">Carrito</h2>
-            <span className="font-body-md text-sm text-on-surface-variant">{items.length} ítem(s)</span>
+            <h2 className="font-headline-md text-headline-md text-primary">A ingresar</h2>
+            <span className="font-body-md text-sm text-on-surface-variant">{items.length} producto(s)</span>
           </div>
           {items.length === 0 ? (
             <p className="text-on-surface-variant py-6 text-center">Aún no hay productos. Escanea o busca uno.</p>
@@ -287,7 +260,7 @@ export default function Operacion({ modo: modoKey }) {
                 <div key={it.codigo} className="flex items-center gap-3 p-3 border-[1.5px] border-surface-variant rounded-lg">
                   <div className="flex-1 min-w-0">
                     <p className="font-label-lg text-label-lg text-sm truncate">{it.descripcion}</p>
-                    <p className="text-on-surface-variant text-xs">{fmtBs(it.precio)} c/u</p>
+                    <p className="text-on-surface-variant text-xs">{it.codigo}</p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => cambiarCantidad(idx, -1)} className="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center active:scale-95" aria-label="Restar">
@@ -298,7 +271,6 @@ export default function Operacion({ modo: modoKey }) {
                       <span className="material-symbols-outlined text-base">add</span>
                     </button>
                   </div>
-                  <span className="w-20 text-right font-metric-lg text-metric-lg">{fmtBs(it.precio * it.cantidad)}</span>
                   <button onClick={() => quitarItem(idx)} className="text-[#ba1a1a] p-1" aria-label="Quitar">
                     <span className="material-symbols-outlined text-lg">delete</span>
                   </button>
@@ -308,24 +280,19 @@ export default function Operacion({ modo: modoKey }) {
           )}
         </section>
 
-        {/* Total + cobrar */}
+        {/* Registrar */}
         <div className="bg-surface rounded-xl tactile-card p-container-padding flex items-center justify-between sticky bottom-[20px]">
           <div>
-            <span className="text-on-surface-variant text-sm block">Total</span>
-            <span className="font-metric-xl text-metric-xl text-primary">{fmtBs(total)}</span>
+            <span className="text-on-surface-variant text-sm block">Unidades a ingresar</span>
+            <span className="font-metric-xl text-metric-xl text-primary">+{totalUnidades}</span>
           </div>
           <button
-            onClick={cobrar}
-            disabled={items.length === 0 || pagando}
+            onClick={registrar}
+            disabled={items.length === 0}
             className="h-[56px] px-6 bg-primary text-on-primary font-button-text text-button-text rounded-lg tactile-button-primary flex items-center gap-2 disabled:opacity-50"
-            style={modoKey === "venta" ? { backgroundColor: "#10A760" } : undefined}
           >
-            {pagando ? (
-              <span className="material-symbols-outlined animate-spin">progress_activity</span>
-            ) : (
-              <span className="material-symbols-outlined">{cfg.icono}</span>
-            )}
-            {cfg.verbo}
+            <span className="material-symbols-outlined">add_box</span>
+            Registrar ingreso
           </button>
         </div>
       </main>

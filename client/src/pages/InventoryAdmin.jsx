@@ -62,7 +62,6 @@ export default function InventoryAdmin() {
         <nav className="flex-1 py-4 px-3 flex flex-col gap-1">
           <NavBtn onClick={() => navigate("/admin")} icono="dashboard" label="Dashboard" />
           <NavBtn onClick={() => navigate("/admin/inventory")} icono="inventory_2" label="Inventory" activo />
-          <NavBtn onClick={() => navigate("/venta")} icono="point_of_sale" label="Venta" />
           <NavBtn onClick={() => navigate("/ingreso")} icono="add_box" label="Ingreso" />
           <NavBtn onClick={() => navigate("/admin/reportes")} icono="monitoring" label="Reportes" />
         </nav>

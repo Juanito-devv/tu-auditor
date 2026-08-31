@@ -17,7 +17,6 @@ function fmtBs(n) {
 const NAV = [
   { key: "dashboard", to: "/admin", icono: "dashboard", label: "Dashboard" },
   { key: "inventory", to: "/admin/inventory", icono: "inventory_2", label: "Inventory" },
-  { key: "venta", to: "/venta", icono: "point_of_sale", label: "Venta" },
   { key: "ingreso", to: "/ingreso", icono: "add_box", label: "Ingreso" },
   { key: "reportes", to: "/admin/reportes", icono: "monitoring", label: "Reportes" },
 ];
@@ -85,7 +84,6 @@ function MobileNav({ activo }) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white border-t border-[#E6E8EC] h-[64px] flex justify-around items-center px-2">
       <MobileItem to="/inicio" activo={false} icono="home" label="Inicio" />
-      <MobileItem to="/venta" activo={false} icono="point_of_sale" label="Venta" />
       <MobileItem to="/admin" activo={activo === "dashboard"} icono="dashboard" label="Admin" />
       <MobileItem to="/ingreso" activo={false} icono="add_box" label="Ingreso" />
     </nav>
@@ -168,12 +166,7 @@ export default function Admin() {
           </div>
 
           {/* Acciones principales */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <button onClick={() => navigate("/venta")} className="rounded-lg p-5 text-left text-white bg-[#10A760] shadow-md hover:brightness-95 transition">
-              <Material name="point_of_sale" className="text-3xl mb-3" />
-              <span className="block font-semibold">Vender</span>
-              <span className="text-white/80 text-sm">Abrir caja y carrito</span>
-            </button>
+          <div className="grid grid-cols-2 lg:grid-cols-2 gap-4">
             <button onClick={() => navigate("/ingreso")} className="rounded-lg p-5 text-left text-white bg-[#1366D9] shadow-md hover:brightness-95 transition">
               <Material name="add_box" className="text-3xl mb-3" />
               <span className="block font-semibold">Ingresar</span>
