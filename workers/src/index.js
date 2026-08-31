@@ -9,25 +9,47 @@ import {
   configureWorkerEnv,
 } from "./sheets.js";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+const ORIGENES_PERMITIDOS = [
+  "https://tu-auditor-front.juanitoira1998.workers.dev",
+  "https://juanitoira1998.workers.dev",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
 
-function json(data, status = 200) {
+// CORS restringido: refleja el Origin solo si está en lista blanca.
+function corsFor(request) {
+  const origin = request.headers.get("Origin");
+  if (origin && ORIGENES_PERMITIDOS.includes(origin)) {
+    return {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      Vary: "Origin",
+    };
+  }
+  return {
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+function json(data, status = 200, cors = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    headers: { "Content-Type": "application/json", ...cors },
   });
 }
 
 function wrap(fn) {
-  return (request) =>
-    fn(request).catch((e) => {
+  return async (request) => {
+    const cors = corsFor(request);
+    try {
+      return await fn(request);
+    } catch (e) {
       console.error("Error del worker:", e);
-      return json({ error: "error_interno", detalle: e.message }, 500);
-    });
+      return json({ error: "error_interno", detalle: e.message }, 500, cors);
+    }
+  };
 }
 
 export default {
@@ -35,10 +57,11 @@ export default {
     configureWorkerEnv(env);
     const url = new URL(request.url);
     const path = url.pathname;
+    const cors = corsFor(request);
 
     // CORS preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return new Response(null, { status: 204, headers: cors });
     }
 
     // Health check
@@ -47,7 +70,7 @@ export default {
     }
 
     if (path === "/api/kpis") {
-      return wrap(async () => json(await getKPIs()))(request);
+      return wrap(async () => json(await getKPIs(), 200, cors))(request);
     }
 
     const codigoMatch = path.match(/^\/api\/articulo\/codigo\/(.+)$/);
@@ -55,8 +78,8 @@ export default {
       return wrap(async () => {
         const codigo = decodeURIComponent(codigoMatch[1]);
         const art = await detallePorCodigo(codigo);
-        if (!art) return json({ error: "producto_no_encontrado" }, 404);
-        return json(art);
+        if (!art) return json({ error: "producto_no_encontrado" }, 404, cors);
+        return json(art, 200, cors);
       })(request);
     }
 
@@ -65,16 +88,16 @@ export default {
       return wrap(async () => {
         const term = decodeURIComponent(articuloMatch[1]);
         const art = await buscarConLotes(term);
-        if (!art) return json({ error: "producto_no_encontrado" }, 404);
-        return json(art);
+        if (!art) return json({ error: "producto_no_encontrado" }, 404, cors);
+        return json(art, 200, cors);
       })(request);
     }
 
     if (path === "/api/cache/reload" && request.method === "POST") {
       resetCache();
-      return json({ ok: true, mensaje: "Caché recargada" });
+      return json({ ok: true, mensaje: "Caché recargada" }, 200, cors);
     }
 
-    return json({ error: "no_encontrado" }, 404);
+    return json({ error: "no_encontrado" }, 404, cors);
   },
 };

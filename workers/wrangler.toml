@@ -4,6 +4,7 @@ compatibility_date = "2025-01-01"
 
 # Variables de entorno (reemplazar en producción con wrangler secret put o dashboard)
 [vars]
+SPREADSHEET_ID = "1PjZy7Srv0Oa3_YGmlVG1zsqbgSOe0V84wRyg4CzL7Ao"
 SHEET_MAESTRO = "Maestro_de_Articulos"
 SHEET_INVENTARIO = "Inventario_fisico"
 SHEET_CONSOLIDACION = "Consolidacion"
