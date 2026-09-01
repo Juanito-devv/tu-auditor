@@ -136,11 +136,12 @@ export default function Inicio() {
 
         {/* Escáner */}
         <div
+          onClick={abrirCamara}
           className={
-            "relative w-full overflow-hidden border-[1.5px] border-surface-variant shadow-[0px_2px_4px_rgba(0,0,0,0.15)] bg-inverse-surface flex items-center justify-center " +
+            "relative w-full overflow-hidden flex items-center justify-center select-none cursor-pointer " +
             (estado === "inicial"
-              ? "rounded-xl aspect-[16/10] sm:aspect-video"
-              : "flex-grow aspect-[4/5] sm:aspect-square rounded-xl")
+              ? "border-[1.5px] border-[#D0D3D9] shadow-[0px_2px_8px_rgba(16,24,40,0.08)] bg-white rounded-2xl aspect-[16/10] sm:aspect-video"
+              : "flex-grow aspect-[4/5] sm:aspect-square rounded-2xl bg-white")
           }
         >
           {(estado === "activo" || estado === "buscando") && (
@@ -150,30 +151,35 @@ export default function Inicio() {
             />
           )}
           {(estado === "activo" || estado === "buscando") && (
-            <>
-              <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 z-10">
-                <div className="scanner-frame absolute inset-0 bg-transparent ring-[100vw] ring-black/50 rounded-lg overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <div className="relative w-64 h-64 sm:w-80 sm:h-80">
+                {/* Marco blanco translúcido dentro de la cámara */}
+                <div className="scanner-frame absolute inset-0 bg-white/10 rounded-lg overflow-hidden">
                   <div className="scan-laser"></div>
                 </div>
-                <div className="scanner-corner scanner-tl rounded-tl-lg"></div>
-                <div className="scanner-corner scanner-tr rounded-tr-lg"></div>
-                <div className="scanner-corner scanner-bl rounded-bl-lg"></div>
-                <div className="scanner-corner scanner-br rounded-br-lg"></div>
+                <div className="scanner-corner scanner-tl"></div>
+                <div className="scanner-corner scanner-tr"></div>
+                <div className="scanner-corner scanner-bl"></div>
+                <div className="scanner-corner scanner-br"></div>
                 {flash && <div className="scan-flash"></div>}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="material-symbols-outlined text-white/50 text-4xl">barcode_scanner</span>
-                </div>
               </div>
-            </>
+            </div>
           )}
 
           {estado === "inicial" && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center px-6">
-                <span className="material-symbols-outlined text-white/60 text-6xl mb-4">barcode_scanner</span>
-                <p className="font-label-lg text-label-lg text-on-primary">
-                  Activa la cámara para escanear
+                <span
+                  className="gradient-icon float-icon material-symbols-outlined text-7xl mb-4"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  scan
+                </span>
+                <p className="font-headline-sm text-headline-sm text-[#1B2430]">
+                  Toca para escanear
+                </p>
+                <p className="font-body-md text-body-md text-[#667085] mt-1">
+                  Apunta a un código de barras
                 </p>
               </div>
             </div>
@@ -199,17 +205,6 @@ export default function Inicio() {
             (estado === "inicial" ? "pt-4" : "mt-auto pt-4")
           }
         >
-          {estado === "inicial" && (
-            <button
-              className="w-full bg-primary text-on-primary font-button-text text-button-text min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 tactile-btn-primary border-[1.5px] border-primary-container transition-transform duration-100"
-              onClick={abrirCamara}
-            >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-                photo_camera
-              </span>
-              Activar cámara
-            </button>
-          )}
           {(estado === "activo" || estado === "buscando") && (
             <button
               className="w-full bg-surface-container-lowest text-on-surface-variant font-button-text text-button-text min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 border-[1.5px] border-surface-variant shadow-[0px_2px_4px_rgba(0,0,0,0.15)] active:scale-95 transition-transform duration-100"

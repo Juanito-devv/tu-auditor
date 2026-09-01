@@ -123,6 +123,23 @@ body {
   animation: scan-flash 0.6s ease-out;
 }
 
+/* Ícono con gradiente KANBAN (más moderno) */
+.gradient-icon {
+  background: linear-gradient(135deg, #009ED8 0%, #0ACF83 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(0, 158, 216, 0.35));
+}
+
+/* Pulsar suave del ícono "toca para escanear" */
+@keyframes icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.float-icon { animation: icon-float 3s ease-in-out infinite; display: inline-block; }
+
 /* Donas de gráficos */
 .donut-chart {
   border-radius: 50%;
