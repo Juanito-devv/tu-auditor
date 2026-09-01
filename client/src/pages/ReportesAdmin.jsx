@@ -102,7 +102,7 @@ function Logo() {
         <span className="absolute top-0 right-0 w-[22px] h-[22px] bg-[#0ACF83] rounded-sm" />
         <span className="absolute top-[6px] right-[3px] w-[13px] h-[13px] bg-white rounded-sm" />
       </span>
-      <span className="font-semibold text-[#009ED8]">Tu Auditor</span>
+      <span className="font-semibold text-[#009ED8]">AuditApp</span>
     </div>
   );
 }

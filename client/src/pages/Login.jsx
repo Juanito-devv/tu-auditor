@@ -37,12 +37,12 @@ export default function Login() {
             <span className="absolute top-0 right-0 w-[33px] h-[33px] bg-[#0ACF83] rounded-md" />
             <span className="absolute top-[9px] right-[4px] w-[19px] h-[19px] bg-white rounded-sm" />
           </span>
-          <span className="font-semibold text-[#009ED8] text-xl">Tu Auditor</span>
+          <span className="font-semibold text-[#009ED8] text-xl">AuditApp</span>
         </div>
 
         <div className="bg-white rounded-xl border border-[#E4E7EC] shadow-[0_1px_3px_rgba(16,24,40,0.08)] p-8">
           <h1 className="text-2xl font-semibold text-[#1B2430] mb-1">Iniciar sesión</h1>
-          <p className="text-[#667085] text-sm mb-6">Accede al panel de Tu Auditor</p>
+          <p className="text-[#667085] text-sm mb-6">Accede al panel de AuditApp</p>
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">

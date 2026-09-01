@@ -1,6 +1,6 @@
 // Servicio de datos de operaciones (FASE 2).
 //
-// Define el CONTRATO de escritura de Tu Auditor. HOY el backend lee solo de
+// Define el CONTRATO de escritura de AuditApp. HOY el backend lee solo de
 // Google Sheets (read-only) y el Postgres multi-tenant aún no está disponible.
 // Por eso estas funciones quedan como contrato definido (mismos nombres, params
 // y forma de respuesta que usará Postgres) pero con una implementación

@@ -6,7 +6,7 @@ export default function TopBar() {
       <div className="flex justify-between items-center h-[64px] px-container-padding w-full">
         <button
           className="text-primary hover:bg-surface-container-high active:scale-95 transition-transform duration-100 p-2 rounded-full flex items-center justify-center"
-          aria-label="Tu Auditor"
+          aria-label="AuditApp"
         >
           <span
             className="material-symbols-outlined"
@@ -16,7 +16,7 @@ export default function TopBar() {
           </span>
         </button>
         <h1 className="font-headline-md text-headline-md text-primary uppercase tracking-tight">
-          Tu Auditor
+          AuditApp
         </h1>
         <button
           className="text-primary hover:bg-surface-container-high active:scale-95 transition-transform duration-100 p-2 rounded-full flex items-center justify-center"

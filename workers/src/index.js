@@ -1,4 +1,4 @@
-// Cloudflare Worker - API de Tu Auditor (enrutamiento + handlers)
+// Cloudflare Worker - API de AuditApp (enrutamiento + handlers)
 // El mismo API que el server Express, pero en serverless.
 
 import {

@@ -49,7 +49,7 @@ export default function Ajustes() {
             <div>
               <p className="font-label-lg text-label-lg text-on-surface">Acerca de</p>
               <p className="font-body-md text-body-md text-on-surface-variant text-sm">
-                Tu Auditor v0.9 · Demo
+                AuditApp v0.9 · Demo
               </p>
             </div>
           </div>

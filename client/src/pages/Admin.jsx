@@ -49,7 +49,7 @@ function Sidebar({ activo }) {
           <span className="absolute top-0 right-0 w-[22px] h-[22px] bg-[#0ACF83] rounded-sm" />
           <span className="absolute top-[6px] right-[3px] w-[13px] h-[13px] bg-white rounded-sm" />
         </span>
-        <span className="font-semibold text-[#009ED8]">Tu Auditor</span>
+        <span className="font-semibold text-[#009ED8]">AuditApp</span>
       </div>
       <nav className="flex-1 py-4 px-3 flex flex-col gap-1">
         {NAV.map((n) => (
@@ -125,7 +125,7 @@ export default function Admin() {
               <span className="absolute bottom-0 left-0 w-7 h-7 rounded-[4px] bg-[#009ED8]" />
               <span className="absolute top-0 right-0 w-[18px] h-[18px] bg-[#0ACF83] rounded-sm" />
             </span>
-            <span className="font-semibold text-[#009ED8]">Tu Auditor</span>
+            <span className="font-semibold text-[#009ED8]">AuditApp</span>
           </div>
           <h1 className="hidden md:block text-lg font-semibold text-[#1B2430]">Dashboard</h1>
           <div className="flex items-center gap-3">

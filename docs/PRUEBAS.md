@@ -1,4 +1,4 @@
-# Guía de Pruebas de la Demo — Tu Auditor
+# Guía de Pruebas de la Demo — AuditApp
 
 Checklist para validar la app en los dispositivos donde se presentará el demo.
 

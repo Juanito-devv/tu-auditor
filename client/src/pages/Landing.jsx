@@ -79,7 +79,7 @@ export default function Landing() {
               <span className="absolute top-0 right-0 w-[22px] h-[22px] bg-[#0ACF83] rounded-sm" />
               <span className="absolute top-[6px] right-[3px] w-[13px] h-[13px] bg-white rounded-sm" />
             </span>
-            <span className="font-semibold text-[#009ED8] text-lg tracking-tight">Tu Auditor</span>
+            <span className="font-semibold text-[#009ED8] text-lg tracking-tight">AuditApp</span>
           </a>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#48505E]">
             <a href="#que-hacemos" className="hover:text-[#1366D9] transition-colors">Qué hacemos</a>
@@ -256,7 +256,7 @@ export default function Landing() {
       <section id="solicitar" className="max-w-6xl mx-auto px-5 py-16 md:py-20">
         <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#1366D9] to-[#009ED8] px-6 py-12 md:px-16 md:py-16 text-center text-white shadow-lg">
           <Material name="inventory_2" className="text-4xl mx-auto mb-4 opacity-90" />
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Lleva Tu Auditor a tu negocio</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">Lleva AuditApp a tu negocio</h2>
           <p className="max-w-xl mx-auto text-white/85 text-lg mb-8">
             Pide una reunión y te mostramos cómo una auditoría de inventario que antes
             tomaba un día entero ahora se hace en minutos.
@@ -289,7 +289,7 @@ export default function Landing() {
               <span className="absolute top-0 right-0 w-[16px] h-[16px] bg-[#0ACF83] rounded-sm" />
               <span className="absolute top-[4px] right-[2px] w-[9px] h-[9px] bg-white rounded-sm" />
             </span>
-            <span className="font-semibold text-[#009ED8]">Tu Auditor</span>
+            <span className="font-semibold text-[#009ED8]">AuditApp</span>
           </div>
           <p className="text-sm text-[#667085] text-center">
             Inventario general para cualquier negocio. Hecho con precisión.
@@ -326,7 +326,7 @@ function MobileDemo() {
               <span className="absolute bottom-0 left-0 w-6 h-6 rounded-[4px] bg-[#009ED8]" />
               <span className="absolute top-0 right-0 w-[16px] h-[16px] bg-[#0ACF83] rounded-sm" />
             </span>
-            <span className="font-semibold text-[#1B2430] text-sm">Tu Auditor</span>
+            <span className="font-semibold text-[#1B2430] text-sm">AuditApp</span>
           </div>
           <span className="flex items-center gap-1 text-xs text-[#667085]">
             <span className="material-symbols-outlined text-sm">wifi</span>
