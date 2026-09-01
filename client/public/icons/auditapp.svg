@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Base azul cielo KANBAN (fondo del icono) -->
+  <rect x="0" y="0" width="512" height="512" fill="#009ED8"/>
+
+  <!-- Cuadrado verde superpuesto, pegado a la esquina superior derecha -->
+  <rect x="160" y="0" width="352" height="352" rx="32" fill="#0ACF83"/>
+
+  <!-- Detalle blanco dentro del verde, hacia la esquina -->
+  <rect x="256" y="96" width="208" height="208" rx="32" fill="#ffffff"/>
+</svg>
