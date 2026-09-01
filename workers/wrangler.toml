@@ -1,6 +1,7 @@
 name = "tu-auditor-api"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # Variables de entorno (reemplazar en producción con wrangler secret put o dashboard)
 [vars]
@@ -11,5 +12,9 @@ SHEET_CONSOLIDACION = "Consolidacion"
 CACHE_TTL_SECONDS = "300"
 DEBUG = "false"
 
+# Tenant demo (multi-tenant / Neon). El UUID del tenant de la demo pública.
+TENANT_ID_DEMO = "a3dbb606-eada-45ef-8617-8a6ce398db5e"
+
 # SPREADSHEET_ID se define como variable/secreto en producción (no aquí, para evitar colisión) 
 # Secreto: GOOGLE_SERVICE_ACCOUNT_JSON se define en el dashboard como secreto (no en vars)
+# Secreto: DATABASE_URL (cadena de conexión de Neon) se define como secreto del worker

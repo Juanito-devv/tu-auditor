@@ -6,9 +6,10 @@ import {
   detallePorCodigo,
   getKPIs,
   listArticulos,
+  registrarIngreso,
   resetCache,
   configureWorkerEnv,
-} from "./sheets.js";
+} from "./pg.js";
 
 const ORIGENES_PERMITIDOS = [
   "https://tu-auditor-front.juanitoira1998.workers.dev",
@@ -107,6 +108,15 @@ export default {
     if (path === "/api/cache/reload" && request.method === "POST") {
       resetCache();
       return json({ ok: true, mensaje: "Caché recargada" }, 200, cors);
+    }
+
+    if (path === "/api/ops/ingreso" && request.method === "POST") {
+      return wrap(async () => {
+        const body = await request.json().catch(() => ({}));
+        const res = await registrarIngreso(body);
+        if (!res.ok) return json(res, 400, cors);
+        return json(res, 200, cors);
+      })(request);
     }
 
     return json({ error: "no_encontrado" }, 404, cors);

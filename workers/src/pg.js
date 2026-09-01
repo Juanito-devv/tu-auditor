@@ -1,0 +1,347 @@
+// Acceso a PostgreSQL (Neon) desde Cloudflare Worker.
+// Reemplaza a sheets.js como fuente de datos: MISMO contrato de funciones
+// exportadas (getKPIs, buscarConLotes, detallePorCodigo, listArticulos,
+// resetCache, configureWorkerEnv) y MISMA lógica de cálculo, pero los datos
+// se leen de la tabla multi-tenant de Neon (articulos, tomas_inventario).
+//
+// Conexión: @neondatabase/serverless (HTTP/WebSocket, sin bloqueo TCP) usando
+// el secret DATABASE_URL. Requiere compatibility_flags = ["nodejs_compat"].
+
+import { Pool } from "@neondatabase/serverless";
+
+const DEFAULT_TTL = 5 * 60 * 1000;
+
+let DATABASE_URL = "";
+let TENANT_ID = "";
+let TTL_MS = DEFAULT_TTL;
+
+export function configureWorkerEnv(env) {
+  if (env) {
+    if (env.DATABASE_URL) DATABASE_URL = env.DATABASE_URL;
+    TENANT_ID = env.TENANT_ID_DEMO || TENANT_ID;
+    TTL_MS = Number(env.CACHE_TTL_SECONDS || 300) * 1000;
+  }
+}
+
+let cache = { maestro: null, inventario: null, maestroAt: 0, inventarioAt: 0 };
+
+function isStale(key) {
+  const at = cache[`${key}At`];
+  return !cache[key] || Date.now() - at > TTL_MS;
+}
+
+function newPool() {
+  return new Pool({ connectionString: DATABASE_URL });
+}
+
+// Convierte una fila de la tabla `articulos` al mismo objeto JS que producía
+// normalizeArticulo() desde el sheet (mismas keys que consume la UI/lógica).
+function rowToArticulo(r) {
+  const precioEspecial = r.precio_especial == null ? null : Number(r.precio_especial);
+  const precio = r.precio == null ? null : Number(r.precio);
+  const precioVigente =
+    precioEspecial && precioEspecial > 0 ? precioEspecial : precio;
+  return {
+    codigo_articulo: r.codigo_articulo,
+    descripcion: r.descripcion,
+    codigo_barras: r.codigo_barras,
+    stock: r.stock || 0,
+    categoria: r.categoria,
+    subcategoria: r.subcategoria,
+    lineas: r.lineas,
+    proveedor: r.proveedor,
+    marcas: r.marcas,
+    consignacion: r.consignacion,
+    articulo_compra: r.articulo_compra,
+    pareto: r.pareto,
+    impuestos: r.impuestos,
+    costo: r.costo == null ? null : Number(r.costo),
+    precio,
+    precio_especial: precioEspecial,
+    precio_vigente: precioVigente,
+    gravado: r.gravado,
+  };
+}
+
+// Fecha date/ISO de Postgres -> "dd/mm/yyyy" (formato que consume la lógica).
+function dbFechaToDiaMesAnio(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+// Convierte una fila de `tomas_inventario` al objeto con las keys esperadas.
+function rowToToma(r) {
+  return {
+    Codigo_Articulo: r.codigo_articulo,
+    Lote: r.lote || "",
+    Fecha_Vencimiento: dbFechaToDiaMesAnio(r.fecha_vencimiento) || "",
+    Ubicacion: r.ubicacion || "",
+    Cantidad: r.cantidad || 0,
+    Dispositivo: r.quien || "",
+  };
+}
+
+async function loadMaestro() {
+  if (!isStale("maestro")) return cache.maestro;
+  const pool = newPool();
+  const objs = [];
+  const byBarcode = new Map();
+  const byCode = new Map();
+  try {
+    const res = await pool.query(
+      "SELECT * FROM articulos WHERE tenant_id = $1",
+      [TENANT_ID]
+    );
+    for (const row of res.rows) {
+      const rec = rowToArticulo(row);
+      objs.push(rec);
+      if (rec.codigo_articulo) byCode.set(rec.codigo_articulo, rec);
+      if (rec.codigo_barras) byBarcode.set(rec.codigo_barras, rec);
+    }
+  } finally {
+    await pool.end();
+  }
+  cache.maestro = { objs, byBarcode, byCode };
+  cache.maestroAt = Date.now();
+  return cache.maestro;
+}
+
+async function loadInventario() {
+  if (!isStale("inventario")) return cache.inventario;
+  const pool = newPool();
+  let rows = [];
+  try {
+    const res = await pool.query(
+      "SELECT * FROM tomas_inventario WHERE tenant_id = $1",
+      [TENANT_ID]
+    );
+    rows = res.rows.map(rowToToma);
+  } finally {
+    await pool.end();
+  }
+  cache.inventario = rows;
+  cache.inventarioAt = Date.now();
+  return cache.inventario;
+}
+
+function parseFecha(s) {
+  if (!s) return null;
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (!m) return null;
+  let y = parseInt(m[3], 10);
+  if (y < 100) y += 2000;
+  return new Date(y, parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+}
+
+async function getDetalleConLotes(codigoArticulo) {
+  const maestro = await loadMaestro();
+  const inv = await loadInventario();
+  const articulo = maestro.byCode.get(String(codigoArticulo).trim());
+  if (!articulo) return null;
+  const tomas = inv.filter(
+    (t) => String(t["Codigo_Articulo"]).trim() === String(codigoArticulo).trim()
+  );
+  const porLote = new Map();
+  for (const t of tomas) {
+    const lote = t["Lote"] || "Sin lote";
+    const key = `${lote}||${t["Fecha_Vencimiento"] || ""}`;
+    const g = porLote.get(key) || {
+      lote,
+      fecha_vencimiento: t["Fecha_Vencimiento"],
+      ubicacion: t["Ubicacion"],
+      cantidad: 0,
+    };
+    g.cantidad += parseInt(t["Cantidad"], 10) || 0;
+    porLote.set(key, g);
+  }
+  const lotes = [...porLote.values()];
+  const totalContado = lotes.reduce((a, b) => a + b.cantidad, 0);
+  return {
+    ...articulo,
+    lotes,
+    total_contado: totalContado,
+    diferencia: totalContado - articulo.stock,
+  };
+}
+
+export async function detallePorCodigo(codigoArticulo) {
+  return getDetalleConLotes(codigoArticulo);
+}
+
+export async function buscarConLotes(term) {
+  const maestro = await loadMaestro();
+  let articulo = maestro.byBarcode.get(String(term).trim());
+  if (!articulo) articulo = maestro.byCode.get(String(term).trim());
+  if (!articulo) return null;
+  return getDetalleConLotes(articulo.codigo_articulo);
+}
+
+// Lista paginada del maestro para la vista admin (Inventory).
+// devuelve { total, page, limit, articulos: [...] }
+export async function listArticulos({ page = 1, limit = 50, q = "" } = {}) {
+  const maestro = await loadMaestro();
+  const query = String(q || "").trim().toLowerCase();
+  let lista = maestro.objs;
+  if (query) {
+    lista = lista.filter((a) => {
+      const d = (a.descripcion || "").toLowerCase();
+      const b = (a.codigo_barras || "").toLowerCase();
+      const c = (a.codigo_articulo || "").toLowerCase();
+      return d.includes(query) || b.includes(query) || c.includes(query);
+    });
+  }
+  const total = lista.length;
+  const limitN = Math.max(1, Math.min(Number(limit) || 50, 200));
+  const pageN = Math.max(1, Number(page) || 1);
+  const start = (pageN - 1) * limitN;
+  const slice = lista.slice(start, start + limitN).map((a) => ({
+    codigo_articulo: a.codigo_articulo,
+    codigo_barras: a.codigo_barras,
+    descripcion: a.descripcion,
+    categoria: a.categoria,
+    proveedor: a.proveedor,
+    stock: a.stock,
+    costo: a.costo,
+    precio_vigente: a.precio_vigente,
+    gravado: a.gravado,
+  }));
+  return { total, page: pageN, limit: limitN, articulos: slice };
+}
+
+export async function getKPIs() {
+  const maestro = await loadMaestro();
+  const inv = await loadInventario();
+  const objs = maestro.objs;
+
+  const stockPorCategoria = new Map();
+  const valorPorCategoria = new Map();
+  let totalCritico = 0;
+  let totalBajo = 0;
+  let totalNormal = 0;
+  let totalExento = 0;
+  let totalGravado = 0;
+  let totalArticulos = objs.length;
+  let totalUnidades = 0;
+  let totalValor = 0;
+
+  const UMBRAL_CRITICO = 10;
+  const UMBRAL_BAJO = 25;
+
+  for (const a of objs) {
+    const stock = a.stock || 0;
+    const costo = a.costo || 0;
+    const cat = a.categoria || "SIN CATEGORIA";
+
+    stockPorCategoria.set(cat, (stockPorCategoria.get(cat) || 0) + stock);
+    valorPorCategoria.set(cat, (valorPorCategoria.get(cat) || 0) + stock * costo);
+    totalUnidades += stock;
+    totalValor += stock * costo;
+
+    if (stock <= UMBRAL_CRITICO) totalCritico++;
+    else if (stock <= UMBRAL_BAJO) totalBajo++;
+    else totalNormal++;
+
+    if (a.gravado === false) totalExento++;
+    else if (a.gravado === true) totalGravado++;
+  }
+
+  const hoy = new Date();
+  const en3 = new Date(hoy.getFullYear(), hoy.getMonth() + 3, hoy.getDate());
+  const en6 = new Date(hoy.getFullYear(), hoy.getMonth() + 6, hoy.getDate());
+  let venc3 = 0;
+  let venc6 = 0;
+  let vencLejanos = 0;
+  let totalTomas = 0;
+
+  for (const t of inv) {
+    const f = parseFecha(t["Fecha_Vencimiento"]);
+    if (!f) continue;
+    totalTomas++;
+    const cantidad = parseInt(t["Cantidad"], 10) || 0;
+    if (f.getFullYear() >= 2900) {
+      vencLejanos += cantidad;
+    } else if (f <= en3) {
+      venc3 += cantidad;
+    } else if (f <= en6) {
+      venc6 += cantidad;
+    } else {
+      vencLejanos += cantidad;
+    }
+  }
+
+  return {
+    stock_por_categoria: [...stockPorCategoria.entries()].map(([k, v]) => ({
+      categoria: k,
+      unidades: v,
+    })),
+    valor_por_categoria: [...valorPorCategoria.entries()].map(([k, v]) => ({
+      categoria: k,
+      valor: Math.round(v * 100) / 100,
+    })),
+    stock_critico: { critico: totalCritico, bajo: totalBajo, normal: totalNormal },
+    impuestos: { exento: totalExento, gravado: totalGravado, sin_definir: objs.length - totalExento - totalGravado },
+    vencimientos: { en_3m: venc3, en_6m: venc6, lejanos: vencLejanos, total_tomas: totalTomas },
+    totales: {
+      total_articulos: totalArticulos,
+      total_unidades: totalUnidades,
+      valor_inventario: Math.round(totalValor * 100) / 100,
+    },
+    umbrales: { critico: UMBRAL_CRITICO, bajo: UMBRAL_BAJO },
+  };
+}
+
+export function resetCache() {
+  cache = { maestro: null, inventario: null, maestroAt: 0, inventarioAt: 0 };
+}
+
+// Escritura: registra un ingreso (suma stock / alta si el artículo no existe).
+// Se aplica sobre la tabla `articulos` del tenant (no requiere tablas nuevas).
+// items: [{ codigo, descripcion, cantidad }]
+export async function registrarIngreso({ items = [] }) {
+  const validos = items.filter((i) => i && i.codigo && Number(i.cantidad) > 0);
+  if (validos.length === 0) return { ok: false, error: "vacio" };
+  const pool = newPool();
+  const client = await pool.connect();
+  let afectados = 0;
+  try {
+    await client.query("BEGIN");
+    for (const it of validos) {
+      const cantidad = Math.min(Math.max(Number(it.cantidad) || 0, 0), 100000);
+      const codigo = String(it.codigo).trim();
+      const up = await client.query(
+        `UPDATE articulos
+           SET stock = stock + $3, actualizado_el = now()
+           WHERE tenant_id = $1 AND codigo_articulo = $2`,
+        [TENANT_ID, codigo, cantidad]
+      );
+      if (up.rowCount === 0) {
+        const descripcion = it.descripcion || codigo;
+        await client.query(
+          `INSERT INTO articulos (tenant_id, codigo_articulo, descripcion, stock)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (tenant_id, codigo_articulo) DO UPDATE
+             SET stock = articulos.stock + EXCLUDED.stock,
+                 actualizado_el = now()`,
+          [TENANT_ID, codigo, descripcion, cantidad]
+        );
+      }
+      afectados++;
+    }
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+  // invalida la caché del maestro para que la suma aparezca de inmediato
+  resetCache();
+  const ticket = `I-${new Date().toISOString().slice(0, 10)}-${String(Date.now() % 100000).padStart(5, "0")}`;
+  return { ok: true, ticket, afectados };
+}
