@@ -12,6 +12,7 @@ export default function Inicio() {
   const [estado, setEstado] = useState("inicial"); // inicial | activo | buscando | error | exito
   const [errorMsg, setErrorMsg] = useState("");
   const [manual, setManual] = useState("");
+  const [flash, setFlash] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -84,6 +85,8 @@ export default function Inicio() {
   }
 
   function irAlArticulo(valor) {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 650);
     detenerScanner();
     setEstado("exito");
     navigate(`/detalle/${encodeURIComponent(valor)}`);
@@ -150,13 +153,14 @@ export default function Inicio() {
             <>
               <div className="absolute inset-0 bg-black/50 pointer-events-none"></div>
               <div className="relative w-64 h-64 sm:w-80 sm:h-80 z-10">
-                <div className="absolute inset-0 bg-transparent ring-[100vw] ring-black/50 rounded-lg overflow-hidden border border-white/20">
+                <div className="scanner-frame absolute inset-0 bg-transparent ring-[100vw] ring-black/50 rounded-lg overflow-hidden">
                   <div className="scan-laser"></div>
                 </div>
                 <div className="scanner-corner scanner-tl rounded-tl-lg"></div>
                 <div className="scanner-corner scanner-tr rounded-tr-lg"></div>
                 <div className="scanner-corner scanner-bl rounded-bl-lg"></div>
                 <div className="scanner-corner scanner-br rounded-br-lg"></div>
+                {flash && <div className="scan-flash"></div>}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <span className="material-symbols-outlined text-white/50 text-4xl">barcode_scanner</span>
                 </div>
