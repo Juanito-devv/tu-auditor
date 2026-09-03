@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiFetch } from "../api.js";
 
 function Material({ name, className = "" }) {
   return (
@@ -50,8 +51,7 @@ export default function Landing() {
   const [reales, setReales] = useState(null);
 
   useEffect(() => {
-    import("../api.js")
-      .then(({ apiFetch }) => apiFetch("/kpis"))
+    apiFetch("/kpis")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d && d.totales) setReales(d);
@@ -191,7 +191,7 @@ export default function Landing() {
           <div className="relative flex justify-center">
             <div className="absolute -inset-8 bg-[#1366D9]/10 rounded-[3rem] blur-3xl -z-10" aria-hidden />
             <div className="lk-float">
-              <MobileDemo />
+              <MobileDemo reales={reales} />
             </div>
           </div>
         </div>
@@ -325,7 +325,7 @@ export default function Landing() {
 }
 
 /* Simulación de la app en el teléfono (más vendedor, datos inventados) */
-function MobileDemo() {
+function MobileDemo({ reales }) {
   return (
     <div className="relative w-[280px] h-[560px] bg-[#0f1115] rounded-[2.6rem] p-[10px] shadow-[0_24px_48px_rgba(16,24,40,0.28)]">
       <div className="relative w-full h-full bg-white rounded-[2.1rem] overflow-hidden flex flex-col">
