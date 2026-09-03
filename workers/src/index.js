@@ -7,6 +7,7 @@ import {
   getKPIs,
   listArticulos,
   registrarIngreso,
+  registrarToma,
   resetCache,
   configureWorkerEnv,
 } from "./pg.js";
@@ -114,6 +115,15 @@ export default {
       return wrap(async () => {
         const body = await request.json().catch(() => ({}));
         const res = await registrarIngreso(body);
+        if (!res.ok) return json(res, 400, cors);
+        return json(res, 200, cors);
+      })(request);
+    }
+
+    if (path === "/api/tomas" && request.method === "POST") {
+      return wrap(async () => {
+        const body = await request.json().catch(() => ({}));
+        const res = await registrarToma(body);
         if (!res.ok) return json(res, 400, cors);
         return json(res, 200, cors);
       })(request);

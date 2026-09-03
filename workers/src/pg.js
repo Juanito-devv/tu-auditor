@@ -42,6 +42,8 @@ function rowToArticulo(r) {
   const precioVigente =
     precioEspecial && precioEspecial > 0 ? precioEspecial : precio;
   return {
+    id: r.id,
+    articulo_id: r.id,
     codigo_articulo: r.codigo_articulo,
     descripcion: r.descripcion,
     codigo_barras: r.codigo_barras,
@@ -344,4 +346,57 @@ export async function registrarIngreso({ items = [] }) {
   resetCache();
   const ticket = `I-${new Date().toISOString().slice(0, 10)}-${String(Date.now() % 100000).padStart(5, "0")}`;
   return { ok: true, ticket, afectados };
+}
+
+// Escritura: registra una toma de inventario (conteo físico) en `tomas_inventario`.
+// Requiere que el código de barras exista en el maestro (articulos) para resolver
+// articulo_id + codigo_articulo. Hace UPSERT por (tenant, codigo_articulo, lote,
+// fecha_vencimiento) sumando la cantidad contada.
+// toma: { codigo_barras, lote, fecha_vencimiento, ubicacion, cantidad }
+export async function registrarToma({ codigo_barras, lote, fecha_vencimiento, ubicacion, cantidad } = {}) {
+  const barcode = String(codigo_barras || "").trim();
+  const cant = Math.min(Math.max(Number(cantidad) || 0, 0), 100000);
+  if (!barcode || cant <= 0) return { ok: false, error: "vacio" };
+
+  const maestro = await loadMaestro();
+  const articulo = maestro.byBarcode.get(barcode);
+  if (!articulo) return { ok: false, error: "no_encontrado" };
+
+  const pool = newPool();
+  const client = await pool.connect();
+  let id = null;
+  try {
+    await client.query("BEGIN");
+    const res = await client.query(
+      `INSERT INTO tomas_inventario
+         (tenant_id, articulo_id, codigo_articulo, lote, fecha_vencimiento, ubicacion, cantidad, quien)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (tenant_id, codigo_articulo, lote, fecha_vencimiento)
+       DO UPDATE SET cantidad = tomas_inventario.cantidad + EXCLUDED.cantidad,
+                     ubicacion = EXCLUDED.ubicacion,
+                     quien = EXCLUDED.quien,
+                     tomada_el = now()
+       RETURNING id`,
+      [
+        TENANT_ID,
+        articulo.articulo_id,
+        articulo.codigo_articulo,
+        lote || "",
+        fecha_vencimiento || null,
+        ubicacion || "",
+        cant,
+        "demo",
+      ]
+    );
+    id = res.rows[0] ? res.rows[0].id : null;
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+  resetCache();
+  return { ok: true, id, articulo_id: articulo.articulo_id, codigo_articulo: articulo.codigo_articulo };
 }
