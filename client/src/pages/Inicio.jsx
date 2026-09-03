@@ -203,6 +203,7 @@ export default function Inicio() {
         </Link>
 
         {/* Escáner */}
+        {estado !== "registro" && (
         <div
           onClick={abrirCamara}
           className={
@@ -259,6 +260,7 @@ export default function Inicio() {
             </p>
           )}
         </div>
+        )}
 
         {estado === "error" && (
           <div className="aviso--error p-4 rounded-lg border-[1.5px] border-error bg-error-container text-on-error-container font-body-md">
