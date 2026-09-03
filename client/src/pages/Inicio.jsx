@@ -298,8 +298,10 @@ export default function Inicio() {
                 <span className="font-body-md text-body-md text-on-surface">{registro.codigo_articulo}</span>
               </div>
               <div className="bg-surface-container-lowest border-[1.5px] border-surface-variant rounded-lg p-3 col-span-2">
-                <span className="font-label-lg text-label-lg text-on-surface-variant block">Artículo ID</span>
-                <span className="font-body-md text-body-md text-on-surface">{registro.articulo_id ?? "—"}</span>
+                <span className="font-label-lg text-label-lg text-on-surface-variant block">Stock en maestro</span>
+                <span className="font-metric-lg text-metric-lg text-on-surface">
+                  {registro.stock ?? 0} unidades
+                </span>
               </div>
             </div>
 
