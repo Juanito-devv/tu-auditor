@@ -109,6 +109,7 @@ export default function Inicio() {
         codigo_barras: data.codigo_barras || valor,
         codigo_articulo: data.codigo_articulo || "—",
         descripcion: data.descripcion || "Sin descripción",
+        stock: data.stock ?? 0,
       });
       setForm({ lote: "", fecha: "", ubicacion: "", cantidad: "" });
       setEstado("registro");
