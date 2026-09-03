@@ -47,6 +47,17 @@ export default function Landing() {
   const statsRef = useRef(null);
   const [statsActivos, setStatsActivos] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [reales, setReales] = useState(null);
+
+  useEffect(() => {
+    import("../api.js")
+      .then(({ apiFetch }) => apiFetch("/kpis"))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && d.totales) setReales(d);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const el = statsRef.current;
@@ -189,10 +200,10 @@ export default function Landing() {
       {/* RESULTADOS (stats inventadas de marketing) */}
       <section id="resultados" ref={statsRef} className="max-w-6xl mx-auto px-5 pb-16 md:pb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Stat activo={statsActivos} icono="verified_user" color="bg-[#E8F1FD] text-[#1366D9]" valor={99} sufijo="%" titulo="Precisión en el conteo" />
-          <Stat activo={statsActivos} icono="timer" color="bg-[#ECEAFF] text-[#6E5AE0]" valor={3} sufijo="x" titulo="Más rápido que auditar a mano" />
-          <Stat activo={statsActivos} icono="inventory_2" color="bg-[#EBFFED] text-[#10A760]" valor={15000} titulo="Productos en el catálogo" />
-          <Stat activo={statsActivos} icono="trending_up" color="bg-[#FFEEDB] text-[#F79009]" valor={40} sufijo="%" titulo="Menos quiebres de stock" />
+          <Stat activo={statsActivos} icono="inventory_2" color="bg-[#EBFFED] text-[#10A760]" valor={reales ? reales.totales.total_articulos : null} titulo="Productos en el catálogo" />
+          <Stat activo={statsActivos} icono="inventory" color="bg-[#E8F1FD] text-[#1366D9]" valor={reales ? reales.totales.total_unidades : null} titulo="Unidades en stock" />
+          <Stat activo={statsActivos} icono="payments" color="bg-[#ECEAFF] text-[#6E5AE0]" valor={reales ? Math.round(reales.totales.valor_inventario) : null} titulo="Valor de inventario (Bs)" />
+          <Stat activo={statsActivos} icono="scan" color="bg-[#FFEEDB] text-[#F79009]" valor={reales ? reales.vencimientos.total_tomas : null} titulo="Tomas de inventario" />
         </div>
       </section>
 
@@ -355,21 +366,21 @@ function MobileDemo() {
               <span className="material-symbols-outlined text-base">check_circle</span>
             </span>
             <div className="flex-1">
-              <p className="text-[10px] text-[#667085] leading-tight">Detectado · 13 unidades</p>
-              <p className="text-xs font-semibold text-[#1B2430] leading-tight">Leche Entera 1L</p>
+              <p className="text-[10px] text-[#667085] leading-tight">Detectado · {reales ? reales.totales.total_unidades.toLocaleString("es-VE") : "…"} unidades</p>
+              <p className="text-xs font-semibold text-[#1B2430] leading-tight">{reales ? `${reales.totales.total_articulos.toLocaleString("es-VE")} productos` : "AuditApp en acción"}</p>
             </div>
-            <span className="text-[10px] bg-[#E8F1FD] text-[#1366D9] font-semibold px-2 py-0.5 rounded-full">+2 lote</span>
+            <span className="text-[10px] bg-[#E8F1FD] text-[#1366D9] font-semibold px-2 py-0.5 rounded-full">{reales ? `${reales.vencimientos.total_tomas} tomas` : "+2 lote"}</span>
           </div>
         </div>
         {/* KPI mini */}
         <div className="mt-auto mx-4 mb-4 rounded-xl border border-[#E6E8EC] p-3 grid grid-cols-2 gap-2">
           <div>
             <p className="text-[10px] text-[#667085]">Nivel stock</p>
-            <p className="text-sm font-bold text-[#10A760]">Saludable</p>
+            <p className="text-sm font-bold text-[#10A760]">{reales ? `${reales.stock_critico.critico.toLocaleString("es-VE")} críticos` : "Saludable"}</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[#667085]">Productos contados</p>
-            <p className="text-sm font-bold text-[#1366D9]">1.248</p>
+            <p className="text-[10px] text-[#667085]">Valor inventario</p>
+            <p className="text-sm font-bold text-[#1366D9]">{reales ? `Bs ${Math.round(reales.totales.valor_inventario).toLocaleString("es-VE")}` : "1.248"}</p>
           </div>
         </div>
       </div>

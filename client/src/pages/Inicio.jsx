@@ -50,26 +50,24 @@ export default function Inicio() {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       // Carga diferida: solo descarga html5-qrcode al abrir la cámara
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
-      // Solo códigos de barras 1D (ignora QR/datamatrix) → decodificación mucho más rápida
+      // FIX iOS: con demasiados formatos activos el decodificador ZXing se vuelve
+      // inestable en Safari/iPhone y NO reconoce códigos EAN-13/UPC (falla ~95%).
+      // Se limita a los formatos de código de barras estándar de productos.
       const SOLO_BARRAS = [
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
         Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.ITF,
       ];
+
       const scanner = new Html5Qrcode("scanner-host");
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: "environment" },
         {
-          fps: 10,
-          aspectRatio: { width: 3, height: 4 },
+          fps: 15,
           qrbox: (w, h) => ({
-            width: Math.min(w * 0.94, 340),
-            height: Math.min(h * 0.92, 240),
+            width: Math.min(w * 0.92, 360),
+            height: Math.min(h * 0.75, 260),
           }),
           formatsToSupport: SOLO_BARRAS,
         },

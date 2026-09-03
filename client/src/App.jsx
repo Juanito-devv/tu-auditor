@@ -11,6 +11,7 @@ import Admin from "./pages/Admin.jsx";
 import InventoryAdmin from "./pages/InventoryAdmin.jsx";
 import ReportesAdmin from "./pages/ReportesAdmin.jsx";
 import Login from "./pages/Login.jsx";
+import PwaInstall from "./components/PwaInstall.jsx";
 import { puedeAccederPanel } from "./lib/auth.js";
 
 // Guard: solo el rol admin puede entrar al panel administrativo.
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/admin/inventory" element={<RequerirPanel><InventoryAdmin /></RequerirPanel>} />
         <Route path="/admin/reportes" element={<RequerirPanel><ReportesAdmin /></RequerirPanel>} />
       </Routes>
+      <PwaInstall />
     </div>
   );
 }
