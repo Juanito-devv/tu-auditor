@@ -34,6 +34,36 @@ function newPool() {
   return new Pool({ connectionString: DATABASE_URL });
 }
 
+// Tasa BCV (Bs por USD) consultada a DolarAPI (fuente "oficial" = BCV).
+// Se cachea 12h porque el BCV publica 1 vez al día. Devuelve número o null si falla.
+let tasaBcvCache = { valor: null, at: 0 };
+const TASA_BCV_TTL = 12 * 60 * 60 * 1000;
+const TASA_BCV_URL = "https://ve.dolarapi.com/v1/dolares/oficial";
+
+export async function getTasaBcv() {
+  if (tasaBcvCache.valor != null && Date.now() - tasaBcvCache.at < TASA_BCV_TTL) {
+    return tasaBcvCache.valor;
+  }
+  try {
+    const res = await fetch(TASA_BCV_URL, {
+      headers: { "accept": "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error("http " + res.status);
+    const d = await res.json();
+    const tasa = Number(d.promedio);
+    if (tasa && tasa > 0) {
+      tasaBcvCache = { valor: tasa, at: Date.now() };
+      return tasa;
+    }
+    throw new Error("sin promedio");
+  } catch (_) {
+    // Si expiró pero tenemos un valor previo, lo seguimos usando como fallback.
+    if (tasaBcvCache.valor != null) return tasaBcvCache.valor;
+    return null;
+  }
+}
+
 // Convierte una fila de la tabla `articulos` al mismo objeto JS que producía
 // normalizeArticulo() desde el sheet (mismas keys que consume la UI/lógica).
 function rowToArticulo(r) {
@@ -215,10 +245,52 @@ export async function listArticulos({ page = 1, limit = 50, q = "" } = {}) {
   return { total, page: pageN, limit: limitN, articulos: slice };
 }
 
+// Detalle de vencimientos agrupado por artículo y por bucket (<3m, 3-6m, >6m).
+// Agrega por Código_Articulo la cantidad total contada y la clasifica según el
+// vencimiento. Devuelve { en_3m: [], en_6m: [], lejanos: [] } (cada item: artículo).
+export async function getVencimientosDetalle() {
+  const maestro = await loadMaestro();
+  const inv = await loadInventario();
+  const hoy = new Date();
+  const en3 = new Date(hoy.getFullYear(), hoy.getMonth() + 3, hoy.getDate());
+  const en6 = new Date(hoy.getFullYear(), hoy.getMonth() + 6, hoy.getDate());
+
+  const porArticulo = new Map();
+  for (const t of inv) {
+    const cod = String(t["Codigo_Articulo"]).trim();
+    const cantidad = parseInt(t["Cantidad"], 10) || 0;
+    const f = parseFecha(t["Fecha_Vencimiento"]);
+    const bucket = !f || f.getFullYear() >= 2900 ? "lejanos" : f <= en3 ? "en_3m" : f <= en6 ? "en_6m" : "lejanos";
+    const g = porArticulo.get(cod) || { total: 0, en_3m: 0, en_6m: 0, lejanos: 0 };
+    g.total += cantidad;
+    g[bucket] += cantidad;
+    porArticulo.set(cod, g);
+  }
+
+  const build = (bucket) =>
+    [...porArticulo.entries()]
+      .filter(([, g]) => g[bucket] > 0)
+      .map(([cod, g]) => {
+        const a = maestro.byCode.get(cod);
+        return {
+          codigo_articulo: cod,
+          descripcion: a ? a.descripcion : "Sin descripción",
+          codigo_barras: a ? a.codigo_barras : "",
+          stock: a ? a.stock || 0 : 0,
+          cantidad: g[bucket],
+          total_contado: g.total,
+        };
+      })
+      .sort((x, y) => y.cantidad - x.cantidad);
+
+  return { en_3m: build("en_3m"), en_6m: build("en_6m"), lejanos: build("lejanos") };
+}
+
 export async function getKPIs() {
   const maestro = await loadMaestro();
   const inv = await loadInventario();
   const objs = maestro.objs;
+  const tasa_bcv = await getTasaBcv();
 
   const stockPorCategoria = new Map();
   const valorPorCategoria = new Map();
@@ -294,6 +366,7 @@ export async function getKPIs() {
       valor_inventario: Math.round(totalValor * 100) / 100,
     },
     umbrales: { critico: UMBRAL_CRITICO, bajo: UMBRAL_BAJO },
+    tasa_bcv,
   };
 }
 

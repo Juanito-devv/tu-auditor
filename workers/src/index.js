@@ -12,6 +12,7 @@ import {
   configureWorkerEnv,
   ensureConsolidacionView,
   getConsolidacion,
+  getVencimientosDetalle,
 } from "./pg.js";
 
 const ORIGENES_PERMITIDOS = [
@@ -141,6 +142,10 @@ export default {
 
     if (path === "/api/consolidacion") {
       return wrap(async () => json(await getConsolidacion(), 200, cors))(request);
+    }
+
+    if (path === "/api/vencimientos-detail") {
+      return wrap(async () => json(await getVencimientosDetalle(), 200, cors))(request);
     }
 
     return json({ error: "no_encontrado" }, 404, cors);

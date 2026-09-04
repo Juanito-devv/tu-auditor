@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { apiFetch } from "../api.js";
+import { useRutas } from "../lib/panel.jsx";
 
 export default function Inicio() {
   const scannerRef = useRef(null);
+  const rutas = useRutas();
 
   const [kpis, setKpis] = useState(null);
   const [estado, setEstado] = useState("inicial"); // inicial | activo | buscando | error | registro
@@ -196,7 +198,7 @@ export default function Inicio() {
 
         {/* Acceso rápido: Ingreso */}
         <Link
-          to="/ingreso"
+          to={rutas.ingreso}
           className="bg-primary text-on-primary font-button-text text-button-text text-sm min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 tactile-btn-primary active:translate-y-[2px] transition-transform"
         >
           <span className="material-symbols-outlined">add_box</span>

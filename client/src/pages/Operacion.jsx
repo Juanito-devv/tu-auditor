@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api.js";
 import { registrarIngreso } from "../lib/ops.js";
+import { useRutas } from "../lib/panel.jsx";
 
 // Página de INGRESO / AGREGAR stock. Escanea o busca un producto, indica cuántas
 // unidades entran al inventario y lo registra. (El módulo de VENTA se retiró:
@@ -10,6 +11,7 @@ import { registrarIngreso } from "../lib/ops.js";
 export default function Ingreso() {
   const navigate = useNavigate();
   const scannerRef = useRef(null);
+  const rutas = useRutas();
 
   const [items, setItems] = useState([]); // {codigo, descripcion, cantidad}
   const [estadoScan, setEstadoScan] = useState("inicial"); // inicial|activo|buscando|error
@@ -157,7 +159,7 @@ export default function Ingreso() {
           </button>
           <button
             className="w-full bg-surface text-primary border-2 border-primary font-button-text text-button-text h-[56px] rounded-lg"
-            onClick={() => navigate("/inicio")}
+            onClick={() => navigate(rutas.home)}
           >
             Volver al inicio
           </button>
@@ -170,7 +172,7 @@ export default function Ingreso() {
     <div className="min-h-screen bg-surface flex flex-col">
       <header className="w-full sticky top-0 z-40 bg-surface border-b-[1.5px] border-surface-variant h-[60px] flex items-center px-container-padding gap-3">
         <button
-          onClick={() => navigate("/inicio")}
+          onClick={() => navigate(rutas.home)}
           className="text-primary p-2 -ml-2 rounded-full hover:bg-surface-container-high active:scale-95 transition-transform"
           aria-label="Volver"
         >

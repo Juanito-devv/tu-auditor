@@ -1,5 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import { usePanel } from "../lib/panel.jsx";
 
 function Tab({ to, fill, icono, etiqueta }) {
   return (
@@ -29,12 +30,14 @@ function Tab({ to, fill, icono, etiqueta }) {
 }
 
 export default function BottomNav({ activo }) {
+  const { esPanel } = usePanel();
+  const base = esPanel ? "/panel" : "";
   return (
     <nav className="fixed bottom-0 w-full h-[76px] z-50 border-t-[1.5px] border-surface-variant shadow-[0px_-2px_4px_rgba(0,0,0,0.15)]">
       <div className="fixed bottom-0 left-0 right-0 flex justify-around items-center px-section-margin bg-surface h-[76px]">
-        <Tab to="/inicio" fill={activo === "inicio"} icono="home" etiqueta="Inicio" />
-        <Tab to="/graficos" fill={activo === "graficos"} icono="query_stats" etiqueta="Gráficos" />
-        <Tab to="/ajustes" fill={activo === "ajustes"} icono="settings" etiqueta="Ajustes" />
+        <Tab to={`${base}/inicio`} fill={activo === "inicio"} icono="home" etiqueta="Inicio" />
+        <Tab to={`${base}/graficos`} fill={activo === "graficos"} icono="query_stats" etiqueta="Gráficos" />
+        <Tab to={`${base}/ajustes`} fill={activo === "ajustes"} icono="settings" etiqueta="Ajustes" />
       </div>
     </nav>
   );

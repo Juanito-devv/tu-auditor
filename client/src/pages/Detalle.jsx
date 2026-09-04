@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { apiFetch } from "../api.js";
+import { useRutas } from "../lib/panel.jsx";
 
 function estadoStock(stock) {
   if (stock <= 10)
@@ -27,6 +28,7 @@ function estadoStock(stock) {
 export default function Detalle() {
   const { term } = useParams();
   const navigate = useNavigate();
+  const rutas = useRutas();
   const [articulo, setArticulo] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -83,7 +85,7 @@ export default function Detalle() {
           </div>
           <button
             className="mt-6 w-full bg-primary text-on-primary font-button-text text-button-text h-[56px] rounded-lg"
-            onClick={() => navigate("/escanear")}
+            onClick={() => navigate(rutas.inicio)}
           >
             Volver a escanear
           </button>
@@ -195,14 +197,14 @@ export default function Detalle() {
         <section className="flex flex-col gap-element-gap pt-4 pb-2">
           <button
             className="w-full bg-primary text-on-primary font-button-text text-button-text h-[56px] min-h-touch-target-min rounded-lg tactile-button-primary flex items-center justify-center gap-2 active:translate-y-[2px] transition-transform"
-            onClick={() => navigate("/escanear")}
+            onClick={() => navigate(rutas.inicio)}
           >
             <span className="material-symbols-outlined">barcode_scanner</span>
             Escanear Otro
           </button>
           <button
             className="w-full bg-surface text-primary border-2 border-primary font-button-text text-button-text h-[56px] min-h-touch-target-min rounded-lg flex items-center justify-center gap-2 active:translate-y-[2px] transition-transform"
-            onClick={() => navigate("/inicio")}
+            onClick={() => navigate(rutas.inicio)}
           >
             <span className="material-symbols-outlined">home</span>
             Inicio

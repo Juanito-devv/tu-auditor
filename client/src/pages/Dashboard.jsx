@@ -2,9 +2,19 @@ import React, { useEffect, useState } from "react";
 import TopBar from "../components/TopBar.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { apiFetch } from "../api.js";
+import { useRutas } from "../lib/panel.jsx";
 
 function fmtNum(n) {
   return Number(n || 0).toLocaleString("es-VE");
+}
+
+function fmtMonto(n, moneda, tasa) {
+  const v = Number(n || 0);
+  if (moneda === "usd") {
+    return "$" + v.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  const bs = v * (Number(tasa) || 1);
+  return "Bs " + bs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function Tarjeta({ titulo, dato, sufijo = "", color = "text-primary", icono, borde }) {
@@ -41,13 +51,32 @@ function Card({ titulo, children, action }) {
   );
 }
 
+// Toggle de moneda (Bs / USD) para montos ligados a la tasa BCV.
+function MonedaToggle({ moneda, setMoneda }) {
+  return (
+    <div className="flex rounded-lg overflow-hidden border-[1.5px] border-surface-variant">
+      {["bs", "usd"].map((m) => (
+        <button
+          key={m}
+          onClick={() => setMoneda(m)}
+          className={`px-2.5 py-1 text-xs font-semibold uppercase transition-colors tactile-card ${
+            moneda === m ? "bg-primary text-white" : "bg-surface text-on-surface-variant"
+          }`}
+        >
+          {m === "bs" ? "Bs" : "$"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // Gráfico de barras vertical (SVG)
 function BarChart({ datos, colores, height = 220 }) {
   if (!datos || datos.length === 0) return <p className="text-on-surface-variant">Sin datos.</p>;
   const max = Math.max(1, ...datos.map((d) => d.value));
   const W = 640;
   const H = height;
-  const padB = 34;
+  const padB = 40;
   const padT = 16;
   const n = datos.length;
   const slot = W / n;
@@ -56,7 +85,6 @@ function BarChart({ datos, colores, height = 220 }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Gráfico de barras">
-      {/* gridlines */}
       {[0.25, 0.5, 0.75, 1].map((g) => (
         <g key={g}>
           <line
@@ -83,13 +111,22 @@ function BarChart({ datos, colores, height = 220 }) {
               rx={6}
               fill={colores[i % colores.length]}
             >
-              <title>{`${d.label || d.name}: ${fmtNum(d.value)}`}</title>
+              <title>{`${d.label || d.name}: ${fmtNum(d.value)} unidades`}</title>
             </rect>
+            <text
+              x={x + barW / 2}
+              y={y - 5}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#44474e"
+            >
+              {d.value > 0 ? fmtNum(d.value) : ""}
+            </text>
             <text
               x={x + barW / 2}
               y={H - padB + 16}
               textAnchor="middle"
-              fontSize="11"
+              fontSize="10.5"
               fill="#44474e"
             >
               {d.short || d.name}
@@ -145,11 +182,14 @@ function AreaChart({ puntos, height = 180, color = "#005db8", fill = "rgba(0,93,
 }
 
 export default function Dashboard() {
+  const { esPanel } = useRutas();
   const [kpis, setKpis] = useState(null);
   const [filas, setFilas] = useState([]);
   const [avance, setAvance] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [cargandoConsol, setCargandoConsol] = useState(true);
+  const [moneda, setMoneda] = useState("bs");
+  const [vencAbierto, setVencAbierto] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -201,16 +241,13 @@ export default function Dashboard() {
     );
 
   const sc = kpis.stock_critico;
-  const imp = kpis.impuestos;
   const venc = kpis.vencimientos;
   const tot = kpis.totales;
   const cat = kpis.stock_por_categoria || [];
+  const tasa = kpis.tasa_bcv;
   const scTotal = sc.critico + sc.bajo + sc.normal;
-  const salud = scTotal ? Math.round((sc.normal / scTotal) * 100) : 0;
 
-  const fmtB = (n) => "Bs " + Number(n || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 });
-
-  const PALETA = ["#005db8", "#3b82d0", "#7aa9e8", "#aac7ff", "#56688a", "#8a9ab8"];
+  const PALETA = ["#005db8", "#3b82d0", "#7aa9e8", "#aac7ff", "#56688a", "#8a9ab8", "#009ED8", "#0ACF83"];
   const catOrdenadas = [...cat].sort((a, b) => b.unidades - a.unidades);
   const barrasCat = catOrdenadas.map((c) => ({
     name: c.categoria,
@@ -218,88 +255,86 @@ export default function Dashboard() {
     value: c.unidades,
   }));
 
-  // Curva de vencimientos: acumulado hacia el horizonte (en_3m, 3-6m, lejanos)
   const curvaVenc = [
     { label: "≤ 3 meses", short: "≤3m", value: venc.en_3m || 0 },
     { label: "3-6 meses", short: "3-6m", value: venc.en_6m || 0 },
     { label: "Lejanos", short: ">6m", value: venc.lejanos || 0 },
   ];
 
-  const impTot = (imp.exento || 0) + (imp.gravado || 0) + (imp.sin_definir || 0);
-  const donutImp = impTot > 0;
-
   return (
     <>
       <TopBar />
-      <main className="max-w-5xl mx-auto px-section-margin pt-element-gap space-y-gutter pb-[96px]">
-        <div className="flex items-center justify-between">
+      <main
+        className={
+          "mx-auto px-section-margin pt-element-gap space-y-gutter pb-[96px] " +
+          (esPanel ? "max-w-5xl" : "max-w-5xl")
+        }
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-headline-md text-headline-md text-primary mb-0.5">Resumen del Inventario</h2>
             <p className="font-body-md text-body-md text-sm text-on-surface-variant">
               Datos del maestro · {fmtNum(tot.total_articulos)} artículos
+              {tasa ? ` · Tasa BCV: Bs ${Number(tasa).toLocaleString("es-VE", { maximumFractionDigits: 2 })}/$` : ""}
             </p>
           </div>
-          <span className="font-body-md text-body-md text-xs bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-full hidden sm:inline">
-            Caché de 5 min
-          </span>
+          {!esPanel && (
+            <span className="font-body-md text-body-md text-xs bg-surface-container-low text-on-surface-variant px-3 py-1.5 rounded-full hidden sm:inline">
+              Caché de 5 min
+            </span>
+          )}
         </div>
 
         {/* KPI row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
-          <Tarjeta titulo="Valuación Total" dato={fmtB(tot.valor_inventario)} icono="payments" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-gutter">
+          <div className="flex flex-col gap-2">
+            <Tarjeta titulo="Valuación Total" dato={fmtMonto(tot.valor_inventario, moneda, tasa)} icono="payments" />
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs text-on-surface-variant">Moneda</span>
+              <MonedaToggle moneda={moneda} setMoneda={setMoneda} />
+            </div>
+          </div>
           <Tarjeta titulo="Unidades" dato={fmtNum(tot.total_unidades)} icono="inventory_2" />
-          <Tarjeta titulo="Salud del Stock" dato={`${salud}%`} icono="monitoring" />
-          <Tarjeta titulo="Ítems Críticos" dato={fmtNum(sc.critico)} icono="warning" color="text-error" borde />
+          <Tarjeta titulo="Tomas de Inventario" dato={fmtNum(venc.total_tomas)} icono="scan" />
         </div>
 
-        {/* Bar chart categorías */}
+        {/* Unidades por Categoría */}
         <Card titulo="Unidades por Categoría">
           <BarChart datos={barrasCat} colores={PALETA} />
+          <p className="text-center text-on-surface-variant text-sm">
+            Unidades en stock por categoría.
+          </p>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
-          {/* Estado del stock */}
-          <Card titulo="Estado del Stock">
-            <div className="space-y-3">
-              <BarEstadistica
-                etiqueta="Óptimo"
-                valor={sc.normal}
-                color="#005db8"
-                total={scTotal}
-              />
-              <BarEstadistica
-                etiqueta="Bajo"
-                valor={sc.bajo}
-                color="#b26a00"
-                total={scTotal}
-              />
-              <BarEstadistica
-                etiqueta="Crítico"
-                valor={sc.critico}
-                color="#ba1a1a"
-                total={scTotal}
-              />
-            </div>
-          </Card>
+        {/* Estado del Stock */}
+        <Card titulo="Estado del Stock">
+          <div className="space-y-3">
+            <BarEstadistica etiqueta="Óptimo" valor={sc.normal} color="#005db8" total={scTotal} />
+            <BarEstadistica etiqueta="Bajo" valor={sc.bajo} color="#b26a00" total={scTotal} />
+            <BarEstadistica etiqueta="Crítico" valor={sc.critico} color="#ba1a1a" total={scTotal} />
+          </div>
+          <p className="text-center text-on-surface-variant text-sm pt-1">
+            {fmtNum(scTotal)} artículos · umbrales bajo ≤ 25 y crítico ≤ 10 unidades
+          </p>
+        </Card>
 
-          {/* Impuestos */}
-          <Card titulo="Impuestos">
-            {donutImp ? (
-              <ImpuestosBlock imp={imp} impTot={impTot} />
-            ) : (
-              <p className="text-on-surface-variant">Sin datos de impuestos.</p>
-            )}
-          </Card>
-        </div>
-
-        {/* área vencimientos */}
-        <Card titulo="Próximos a Vencer (por cantidad)">
+        {/* Próximos a Vencer (click → detalle) */}
+        <Card
+          titulo="Próximos a Vencer (por cantidad)"
+          action={
+            <button
+              onClick={() => setVencAbierto(true)}
+              className="text-primary text-sm font-semibold flex items-center gap-1 hover:underline"
+            >
+              Ver detalle <span className="material-symbols-outlined text-base">open_in_new</span>
+            </button>
+          }
+        >
           <AreaChart puntos={curvaVenc} color="#b26a00" fill="rgba(178,106,0,0.14)" />
+          <p className="text-center text-on-surface-variant text-sm">
+            Haz clic en "Ver detalle" para listar los productos que vencen.
+          </p>
         </Card>
-
-        <p className="text-center text-on-surface-variant font-body-md text-body-md text-sm pt-2">
-          Datos reales del maestro. Los lotes sin fecha se cuentan como lejanos.
-        </p>
 
         {/* Consolidación: avance de conteo (dona) */}
         <Card titulo="Avance de Conteo">
@@ -324,13 +359,13 @@ export default function Dashboard() {
         </Card>
 
         {/* Top discrepancias por impacto financiero */}
-        <Card titulo="Top Discrepancias">
+        <Card titulo="Top Discrepancias (Impacto Financiero)">
           {cargandoConsol ? (
             <p className="text-on-surface-variant text-center py-4">Cargando…</p>
           ) : filas.length === 0 ? (
             <p className="text-on-surface-variant text-center py-4">Sin discrepancias.</p>
           ) : (
-            <TopDiscrepancias filas={filas} />
+            <TopDiscrepancias filas={filas} moneda={moneda} tasa={tasa} />
           )}
         </Card>
 
@@ -342,6 +377,9 @@ export default function Dashboard() {
             <p className="text-on-surface-variant text-center py-4">Sin datos de consolidación.</p>
           ) : (
             <div className="overflow-x-auto">
+              <div className="flex items-center justify-end pb-2">
+                <MonedaToggle moneda={moneda} setMoneda={setMoneda} />
+              </div>
               <table className="w-full text-sm" role="table">
                 <thead>
                   <tr className="border-b border-surface-variant text-left text-on-surface-variant font-body-md">
@@ -352,7 +390,7 @@ export default function Dashboard() {
                     <th className="pb-2 px-2 text-right">Stock</th>
                     <th className="pb-2 px-2 text-right">Diferencia</th>
                     <th className="pb-2 px-2">Estatus</th>
-                    <th className="pb-2 px-2 text-right">Impacto Finac.</th>
+                    <th className="pb-2 px-2 text-right">Impacto ({moneda === "usd" ? "$" : "Bs"})</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -381,7 +419,7 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td className="py-2 px-2 font-body-md text-on-surface text-right">
-                        Bs {Number(c.impacto_financiero || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                        {fmtMonto(c.impacto_financiero, moneda, tasa)}
                       </td>
                     </tr>
                   ))}
@@ -392,6 +430,10 @@ export default function Dashboard() {
         </Card>
       </main>
       <BottomNav activo="graficos" />
+
+      {vencAbierto && (
+        <ModalVencimientos onClose={() => setVencAbierto(false)} />
+      )}
     </>
   );
 }
@@ -413,48 +455,84 @@ function BarEstadistica({ etiqueta, valor, color, total }) {
   );
 }
 
-function ImpuestosBlock({ imp, impTot }) {
-  const cols = [
-    { n: "Exento", v: imp.exento || 0, c: "#005db8" },
-    { n: "Gravado", v: imp.gravado || 0, c: "#b26a00" },
-    { n: "Sin definir", v: imp.sin_definir || 0, c: "#dad9dd" },
+// Modal de detalle de vencimientos con tabs <3m / 3-6m / >6m
+function ModalVencimientos({ onClose }) {
+  const [tab, setTab] = useState("en_3m");
+  const [datos, setDatos] = useState(null);
+
+  useEffect(() => {
+    let activo = true;
+    apiFetch("/vencimientos-detail")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => activo && setDatos(d))
+      .catch(() => activo && setDatos(null));
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const tabs = [
+    { k: "en_3m", label: "< 3 meses" },
+    { k: "en_6m", label: "3-6 meses" },
+    { k: "lejanos", label: "> 6 meses" },
   ];
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <DonutConSegments cols={cols} impTot={impTot} />
-      <div className="flex flex-wrap justify-center gap-4">
-        {cols.map((c, i) => (
-          <span key={i} className="flex items-center gap-1.5 text-sm font-body-md text-on-surface-variant">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c.c }} />
-            {c.n}: {fmtNum(c.v)}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function DonutConSegments({ cols, impTot }) {
-  const grosor = 26;
-  const tam = 168;
-  let acum = 0;
-  const grad = cols
-    .map((c) => {
-      const from = (acum / impTot) * 100;
-      acum += c.v;
-      const to = (acum / impTot) * 100;
-      return `${c.c} ${from}% ${to}%`;
-    })
-    .join(", ");
+  const listado = datos ? (datos[tab] || []) : [];
 
   return (
-    <div
-      className="donut-chart"
-      style={{ width: tam, height: tam, background: `conic-gradient(${grad})` }}
-    >
-      <div className="donut-inner" style={{ width: tam - grosor, height: tam - grosor }}>
-        <span className="font-metric-xl text-metric-xl text-primary">{fmtNum(impTot)}</span>
-        <span className="font-label-lg text-label-lg text-on-surface-variant text-sm">artículos</span>
+    <div className="fixed inset-0 z-[80] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-6" onClick={onClose}>
+      <div
+        className="bg-surface rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-variant">
+          <h3 className="font-headline-md text-headline-md text-primary">Próximos a Vencer</h3>
+          <button onClick={onClose} className="text-on-surface-variant p-1" aria-label="Cerrar">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="flex gap-2 px-5 pt-4 pb-2">
+          {tabs.map((t) => {
+            const n = datos ? (datos[t.k] || []).length : 0;
+            return (
+              <button
+                key={t.k}
+                onClick={() => setTab(t.k)}
+                className={`px-3 py-1.5 rounded-full text-sm font-semibold tactile-card ${
+                  tab === t.k ? "bg-primary text-white" : "bg-surface-container-low text-on-surface-variant"
+                }`}
+              >
+                {t.label} · {fmtNum(n)}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 pt-2">
+          {!datos ? (
+            <p className="text-on-surface-variant text-center py-6">Cargando detalle…</p>
+          ) : listado.length === 0 ? (
+            <p className="text-on-surface-variant text-center py-6">Sin productos en este rango.</p>
+          ) : (
+            <div className="space-y-2">
+              {listado.map((a, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 p-3 border-[1.5px] border-surface-variant rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-label-lg text-label-lg text-sm truncate">{a.descripcion}</p>
+                    <p className="text-on-surface-variant text-xs">
+                      Cód. {a.codigo_articulo} · stock {fmtNum(a.stock)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-metric-lg text-metric-lg text-primary">{fmtNum(a.cantidad)}</p>
+                    <p className="text-[10px] text-on-surface-variant uppercase">unidades</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -541,8 +619,8 @@ function EstatusBarras({ filas }) {
   );
 }
 
-// Top discrepancias por impacto financiero (top 5/10/15)
-function TopDiscrepancias({ filas }) {
+// Top discrepancias por impacto financiero (top 5/10/15), monto en Bs/$
+function TopDiscrepancias({ filas, moneda, tasa }) {
   const [top, setTop] = useState(10);
 
   const ordenadas = [...filas].sort(
@@ -568,21 +646,18 @@ function TopDiscrepancias({ filas }) {
       </div>
       <div className="space-y-2.5">
         {topFilas.map((f, i) => {
-          const v = Math.abs(Number(f.impacto_financiero) || 0);
           const val = Number(f.impacto_financiero) || 0;
+          const v = Math.abs(val);
           return (
             <div key={i} className="flex items-center gap-3">
               <span className="text-xs font-bold text-on-surface-variant w-5 text-right">{i + 1}</span>
               <div className="flex-1">
-                <div className="flex justify-between items-center mb-0.5">
+                <div className="flex justify-between items-center mb-0.5 gap-2">
                   <span className="font-body-md text-body-md text-sm text-on-surface truncate" title={f.descripcion}>
                     {f.descripcion}
                   </span>
-                  <span
-                    className="font-body-md text-body-md text-sm"
-                    style={{ color: val > 0 ? "#005db8" : val < 0 ? "#da3e33" : "#333" }}
-                  >
-                    Bs {Number(val).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                  <span className="font-body-md text-body-md text-sm whitespace-nowrap" style={{ color: val > 0 ? "#005db8" : val < 0 ? "#da3e33" : "#333" }}>
+                    {fmtMonto(val, moneda, tasa)}
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
