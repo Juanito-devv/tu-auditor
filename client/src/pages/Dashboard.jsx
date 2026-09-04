@@ -146,7 +146,8 @@ function AreaChart({ puntos, height = 180, color = "#005db8", fill = "rgba(0,93,
 
 export default function Dashboard() {
   const [kpis, setKpis] = useState(null);
-  const [consolidacion, setConsolidacion] = useState([]);
+  const [filas, setFilas] = useState([]);
+  const [avance, setAvance] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [cargandoConsol, setCargandoConsol] = useState(true);
 
@@ -167,12 +168,13 @@ export default function Dashboard() {
   useEffect(() => {
     let activo = true;
     apiFetch("/consolidacion")
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (activo) {
-          setConsolidacion(d);
-          setCargandoConsol(false);
+        if (activo && d) {
+          setFilas(d.filas || []);
+          setAvance(d.avance || null);
         }
+        if (activo) setCargandoConsol(false);
       })
       .catch(() => activo && setCargandoConsol(false));
     return () => {
@@ -299,11 +301,44 @@ export default function Dashboard() {
           Datos reales del maestro. Los lotes sin fecha se cuentan como lejanos.
         </p>
 
-        {/* Consolidación: vista_consolidacion */}
+        {/* Consolidación: avance de conteo (dona) */}
+        <Card titulo="Avance de Conteo">
+          {cargandoConsol ? (
+            <p className="text-on-surface-variant text-center py-4">Cargando…</p>
+          ) : !avance ? (
+            <p className="text-on-surface-variant text-center py-4">Sin datos de avance.</p>
+          ) : (
+            <AvanceContado avance={avance} />
+          )}
+        </Card>
+
+        {/* Estatus (barras %) */}
+        <Card titulo="Estatus del Conteo">
+          {cargandoConsol ? (
+            <p className="text-on-surface-variant text-center py-4">Cargando…</p>
+          ) : filas.length === 0 ? (
+            <p className="text-on-surface-variant text-center py-4">Sin datos de estatus.</p>
+          ) : (
+            <EstatusBarras filas={filas} />
+          )}
+        </Card>
+
+        {/* Top discrepancias por impacto financiero */}
+        <Card titulo="Top Discrepancias">
+          {cargandoConsol ? (
+            <p className="text-on-surface-variant text-center py-4">Cargando…</p>
+          ) : filas.length === 0 ? (
+            <p className="text-on-surface-variant text-center py-4">Sin discrepancias.</p>
+          ) : (
+            <TopDiscrepancias filas={filas} />
+          )}
+        </Card>
+
+        {/* Consolidación: tabla completa */}
         <Card titulo="Consolidación de Tomas vs Maestro">
           {cargandoConsol ? (
             <p className="text-on-surface-variant text-center py-4">Cargando consolidación…</p>
-          ) : consolidacion.length === 0 ? (
+          ) : filas.length === 0 ? (
             <p className="text-on-surface-variant text-center py-4">Sin datos de consolidación.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -317,12 +352,11 @@ export default function Dashboard() {
                     <th className="pb-2 px-2 text-right">Stock</th>
                     <th className="pb-2 px-2 text-right">Diferencia</th>
                     <th className="pb-2 px-2">Estatus</th>
-                    <th className="pb-2 px-2">Cat.</th>
-                    <th className="pb-2 px-2 text-right">Valor</th>
+                    <th className="pb-2 px-2 text-right">Impacto Finac.</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {consolidacion.map((c, i) => (
+                  {filas.map((c, i) => (
                     <tr key={i} className="border-b border-surface-variant/50 hover:bg-surface-container-lowest/50">
                       <td className="py-2 px-2 font-body-md text-on-surface max-w-[200px] truncate" title={c.descripcion}>
                         {c.descripcion}
@@ -346,9 +380,8 @@ export default function Dashboard() {
                           {c.estatus.charAt(0).toUpperCase() + c.estatus.slice(1)}
                         </span>
                       </td>
-                      <td className="py-2 px-2 font-body-md text-on-surface-variant text-center">{c.categoria || "—"}</td>
                       <td className="py-2 px-2 font-body-md text-on-surface text-right">
-                        Bs {Number(c.precio_vigente || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                        Bs {Number(c.impacto_financiero || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   ))}
@@ -422,6 +455,146 @@ function DonutConSegments({ cols, impTot }) {
       <div className="donut-inner" style={{ width: tam - grosor, height: tam - grosor }}>
         <span className="font-metric-xl text-metric-xl text-primary">{fmtNum(impTot)}</span>
         <span className="font-label-lg text-label-lg text-on-surface-variant text-sm">artículos</span>
+      </div>
+    </div>
+  );
+}
+
+// Dona de Avance de Conteo: % contados vs % con stock
+function AvanceContado({ avance }) {
+  const conStock = Number(avance.con_stock) || 0;
+  const contados = Number(avance.contados) || 0;
+  const total = conStock || 1;
+  const pctContados = Math.round((contados / total) * 100);
+  const pctFalta = Math.max(0, 100 - pctContados);
+  const grosor = 26;
+  const tam = 176;
+
+  const segs = [
+    `#005db8 ${0}% ${pctContados}%`,
+    `#e0e0e6 ${pctContados}% ${pctContados + pctFalta}%`,
+  ].join(", ");
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div
+        className="donut-chart"
+        style={{ width: tam, height: tam, background: `conic-gradient(${segs})` }}
+      >
+        <div className="donut-inner" style={{ width: tam - grosor, height: tam - grosor }}>
+          <span className="font-metric-xl text-metric-xl text-primary">{pctContados}%</span>
+          <span className="font-label-lg text-label-lg text-on-surface-variant text-sm">contados</span>
+        </div>
+      </div>
+      <div className="flex flex-wrap justify-center gap-4">
+        <span className="flex items-center gap-1.5 text-sm font-body-md text-on-surface-variant">
+          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "#005db8" }} />
+          Contados: {fmtNum(contados)} ({pctContados}%)
+        </span>
+        <span className="flex items-center gap-1.5 text-sm font-body-md text-on-surface-variant">
+          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "#e0e0e6" }} />
+          Pendientes: {fmtNum(conStock - contados)} ({pctFalta}%)
+        </span>
+      </div>
+      <p className="text-center text-on-surface-variant text-sm">
+        Artículos con stock en el maestro: {fmtNum(conStock)} · ya contados: {fmtNum(contados)}
+      </p>
+    </div>
+  );
+}
+
+// Barras horizontales: % de cada estatus (completos, faltante, sobrante)
+function EstatusBarras({ filas }) {
+  const tot = filas.length;
+  const cuenta = (et) => filas.filter((f) => f.estatus === et).length;
+  const completo = cuenta("completo");
+  const faltante = cuenta("faltante");
+  const sobrante = cuenta("sobrante");
+  const pct = (n) => (tot ? Math.round((n / tot) * 100) : 0);
+
+  const filas2 = [
+    { n: "Completos", v: completo, c: "#10a760" },
+    { n: "Faltante", v: faltante, c: "#da3e33" },
+    { n: "Sobrante", v: sobrante, c: "#005db8" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      {filas2.map((r) => (
+        <div key={r.n}>
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-body-md text-body-md text-sm text-on-surface">{r.n}</span>
+            <span className="font-body-md text-body-md text-sm text-on-surface-variant">
+              {fmtNum(r.v)} · {pct(r.v)}%
+            </span>
+          </div>
+          <div className="h-2.5 rounded-full bg-surface-container-high overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${pct(r.v)}%`, backgroundColor: r.c }}
+            />
+          </div>
+        </div>
+      ))}
+      <p className="text-center text-on-surface-variant text-sm pt-1">Total artículos contados: {fmtNum(tot)}</p>
+    </div>
+  );
+}
+
+// Top discrepancias por impacto financiero (top 5/10/15)
+function TopDiscrepancias({ filas }) {
+  const [top, setTop] = useState(10);
+
+  const ordenadas = [...filas].sort(
+    (a, b) => Math.abs(Number(b.impacto_financiero) || 0) - Math.abs(Number(a.impacto_financiero) || 0)
+  );
+  const topFilas = ordenadas.slice(0, top);
+  const max = Math.max(1, ...topFilas.map((f) => Math.abs(Number(f.impacto_financiero) || 0)));
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2 justify-end">
+        {[5, 10, 15].map((n) => (
+          <button
+            key={n}
+            onClick={() => setTop(n)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold tactile-card ${
+              top === n ? "bg-primary text-white" : "bg-surface-container-high text-on-surface-variant"
+            }`}
+          >
+            Top {n}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2.5">
+        {topFilas.map((f, i) => {
+          const v = Math.abs(Number(f.impacto_financiero) || 0);
+          const val = Number(f.impacto_financiero) || 0;
+          return (
+            <div key={i} className="flex items-center gap-3">
+              <span className="text-xs font-bold text-on-surface-variant w-5 text-right">{i + 1}</span>
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-0.5">
+                  <span className="font-body-md text-body-md text-sm text-on-surface truncate" title={f.descripcion}>
+                    {f.descripcion}
+                  </span>
+                  <span
+                    className="font-body-md text-body-md text-sm"
+                    style={{ color: val > 0 ? "#005db8" : val < 0 ? "#da3e33" : "#333" }}
+                  >
+                    Bs {Number(val).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${(v / max) * 100}%`, backgroundColor: val > 0 ? "#005db8" : "#da3e33" }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

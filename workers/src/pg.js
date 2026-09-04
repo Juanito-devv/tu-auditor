@@ -422,18 +422,11 @@ export async function ensureConsolidacionView() {
           WHEN (COALESCE(SUM(t.cantidad), 0) - a.stock) < 0 THEN 'faltante'
           ELSE 'sobrante'
         END AS estatus,
-        MIN(t.fecha_vencimiento) AS vencimiento_min,
-        MAX(t.fecha_vencimiento) AS vencimiento_max,
-        COUNT(*) AS total_registros_toma,
-        a.categoria,
         a.costo,
-        CASE 
-          WHEN a.precio_especial IS NOT NULL AND a.precio_especial > 0 THEN a.precio_especial 
-          ELSE a.precio 
-        END AS precio_vigente
+        ((COALESCE(SUM(t.cantidad), 0) - a.stock) * a.costo) AS impacto_financiero
       FROM tomas_inventario t
       JOIN articulos a ON a.tenant_id = t.tenant_id AND a.codigo_articulo = t.codigo_articulo
-      GROUP BY t.tenant_id, t.codigo_articulo, a.codigo_barras, a.descripcion, a.stock, a.categoria, a.costo, a.precio, a.precio_especial;
+      GROUP BY t.tenant_id, t.codigo_articulo, a.codigo_barras, a.descripcion, a.stock, a.costo;
     `);
     return { ok: true };
   } catch (e) {
@@ -448,10 +441,22 @@ export async function getConsolidacion() {
   const pool = newPool();
   try {
     const res = await pool.query(
-      `SELECT * FROM vista_consolidacion WHERE tenant_id = $1 ORDER BY diferencia DESC`,
+      `SELECT * FROM vista_consolidacion WHERE tenant_id = $1 ORDER BY ABS(impacto_financiero) DESC`,
       [TENANT_ID]
     );
-    return res.rows;
+    const filas = res.rows;
+
+    // Avance de conteo: contados = artículos con >=1 toma (vista) vs con stock = total maestro
+    const m = await pool.query(
+      `SELECT
+         (SELECT COUNT(*) FROM articulos WHERE tenant_id = $1 AND stock IS NOT NULL) AS con_stock,
+         (SELECT COUNT(*) FROM (SELECT DISTINCT codigo_articulo FROM tomas_inventario WHERE tenant_id = $1) sub) AS contados
+       `,
+      [TENANT_ID]
+    );
+    const avance = m.rows[0];
+
+    return { filas, avance };
   } finally {
     await pool.end();
   }
