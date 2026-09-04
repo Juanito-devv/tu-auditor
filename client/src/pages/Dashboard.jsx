@@ -146,7 +146,9 @@ function AreaChart({ puntos, height = 180, color = "#005db8", fill = "rgba(0,93,
 
 export default function Dashboard() {
   const [kpis, setKpis] = useState(null);
+  const [consolidacion, setConsolidacion] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [cargandoConsol, setCargandoConsol] = useState(true);
 
   useEffect(() => {
     let activo = true;
@@ -157,6 +159,22 @@ export default function Dashboard() {
         if (activo) setCargando(false);
       })
       .catch(() => activo && setCargando(false));
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let activo = true;
+    apiFetch("/consolidacion")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => {
+        if (activo) {
+          setConsolidacion(d);
+          setCargandoConsol(false);
+        }
+      })
+      .catch(() => activo && setCargandoConsol(false));
     return () => {
       activo = false;
     };
@@ -280,6 +298,65 @@ export default function Dashboard() {
         <p className="text-center text-on-surface-variant font-body-md text-body-md text-sm pt-2">
           Datos reales del maestro. Los lotes sin fecha se cuentan como lejanos.
         </p>
+
+        {/* Consolidación: vista_consolidacion */}
+        <Card titulo="Consolidación de Tomas vs Maestro">
+          {cargandoConsol ? (
+            <p className="text-on-surface-variant text-center py-4">Cargando consolidación…</p>
+          ) : consolidacion.length === 0 ? (
+            <p className="text-on-surface-variant text-center py-4">Sin datos de consolidación.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" role="table">
+                <thead>
+                  <tr className="border-b border-surface-variant text-left text-on-surface-variant font-body-md">
+                    <th className="pb-2 px-2">Artículo</th>
+                    <th className="pb-2 px-2">Cód. Barra</th>
+                    <th className="pb-2 px-2">Lotes</th>
+                    <th className="pb-2 px-2 text-right">Total Contado</th>
+                    <th className="pb-2 px-2 text-right">Stock</th>
+                    <th className="pb-2 px-2 text-right">Diferencia</th>
+                    <th className="pb-2 px-2">Estatus</th>
+                    <th className="pb-2 px-2">Cat.</th>
+                    <th className="pb-2 px-2 text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consolidacion.map((c, i) => (
+                    <tr key={i} className="border-b border-surface-variant/50 hover:bg-surface-container-lowest/50">
+                      <td className="py-2 px-2 font-body-md text-on-surface max-w-[200px] truncate" title={c.descripcion}>
+                        {c.descripcion}
+                      </td>
+                      <td className="py-2 px-2 font-body-md text-on-surface-variant">{c.codigo_barra || "—"}</td>
+                      <td className="py-2 px-2 font-body-md text-on-surface-variant text-center">{c.conteo_lotes}</td>
+                      <td className="py-2 px-2 font-body-md text-on-surface text-right">{fmtNum(c.conteo_fecha_vencimiento)}</td>
+                      <td className="py-2 px-2 font-body-md text-on-surface-variant text-right">{fmtNum(c.stock)}</td>
+                      <td className="py-2 px-2 font-body-md text-right" style={{ color: Number(c.diferencia) > 0 ? "#005db8" : Number(c.diferencia) < 0 ? "#ba1a1a" : "#333" }}>
+                        {Number(c.diferencia) > 0 ? "+" : ""}{fmtNum(c.diferencia)}
+                      </td>
+                      <td className="py-2 px-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          c.estatus === "sobrante" ? "bg-blue-100 text-blue-800" :
+                          c.estatus === "faltante" ? "bg-red-100 text-red-800" :
+                          "bg-green-100 text-green-800"
+                        }`}>
+                          {c.estatus === "sobrante" && <span className="material-symbols-outlined text-[11px]">arrow_upward</span>}
+                          {c.estatus === "faltante" && <span className="material-symbols-outlined text-[11px]">arrow_downward</span>}
+                          {c.estatus === "completo" && <span className="material-symbols-outlined text-[11px]">check_circle</span>}
+                          {c.estatus.charAt(0).toUpperCase() + c.estatus.slice(1)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 font-body-md text-on-surface-variant text-center">{c.categoria || "—"}</td>
+                      <td className="py-2 px-2 font-body-md text-on-surface text-right">
+                        Bs {Number(c.precio_vigente || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       </main>
       <BottomNav activo="graficos" />
     </>

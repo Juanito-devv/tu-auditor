@@ -400,3 +400,59 @@ export async function registrarToma({ codigo_barras, lote, fecha_vencimiento, ub
   resetCache();
   return { ok: true, id, articulo_id: articulo.articulo_id, codigo_articulo: articulo.codigo_articulo };
 }
+
+// Vista: crea vista_consolidacion en Neon (idempotente)
+export async function ensureConsolidacionView() {
+  const pool = newPool();
+  try {
+    await pool.query(`DROP VIEW IF EXISTS vista_consolidacion`);
+    await pool.query(`
+      CREATE VIEW vista_consolidacion AS
+      SELECT
+        t.tenant_id,
+        t.codigo_articulo,
+        a.codigo_barras AS codigo_barra,
+        a.descripcion,
+        COUNT(DISTINCT t.lote || '|' || COALESCE(t.fecha_vencimiento::text, '')) AS conteo_lotes,
+        COALESCE(SUM(t.cantidad), 0) AS conteo_fecha_vencimiento,
+        a.stock,
+        (COALESCE(SUM(t.cantidad), 0) - a.stock) AS diferencia,
+        CASE
+          WHEN (COALESCE(SUM(t.cantidad), 0) - a.stock) = 0 THEN 'completo'
+          WHEN (COALESCE(SUM(t.cantidad), 0) - a.stock) < 0 THEN 'faltante'
+          ELSE 'sobrante'
+        END AS estatus,
+        MIN(t.fecha_vencimiento) AS vencimiento_min,
+        MAX(t.fecha_vencimiento) AS vencimiento_max,
+        COUNT(*) AS total_registros_toma,
+        a.categoria,
+        a.costo,
+        CASE 
+          WHEN a.precio_especial IS NOT NULL AND a.precio_especial > 0 THEN a.precio_especial 
+          ELSE a.precio 
+        END AS precio_vigente
+      FROM tomas_inventario t
+      JOIN articulos a ON a.tenant_id = t.tenant_id AND a.codigo_articulo = t.codigo_articulo
+      GROUP BY t.tenant_id, t.codigo_articulo, a.codigo_barras, a.descripcion, a.stock, a.categoria, a.costo, a.precio, a.precio_especial;
+    `);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  } finally {
+    await pool.end();
+  }
+}
+
+// Consulta consolidación
+export async function getConsolidacion() {
+  const pool = newPool();
+  try {
+    const res = await pool.query(
+      `SELECT * FROM vista_consolidacion WHERE tenant_id = $1 ORDER BY diferencia DESC`,
+      [TENANT_ID]
+    );
+    return res.rows;
+  } finally {
+    await pool.end();
+  }
+}

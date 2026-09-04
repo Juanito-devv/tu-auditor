@@ -10,6 +10,8 @@ import {
   registrarToma,
   resetCache,
   configureWorkerEnv,
+  ensureConsolidacionView,
+  getConsolidacion,
 } from "./pg.js";
 
 const ORIGENES_PERMITIDOS = [
@@ -127,6 +129,18 @@ export default {
         if (!res.ok) return json(res, 400, cors);
         return json(res, 200, cors);
       })(request);
+    }
+
+    if (path === "/api/consolidacion/ensure-view" && request.method === "POST") {
+      return wrap(async () => {
+        const res = await ensureConsolidacionView();
+        if (!res.ok) return json(res, 500, cors);
+        return json(res, 200, cors);
+      })(request);
+    }
+
+    if (path === "/api/consolidacion") {
+      return wrap(async () => json(await getConsolidacion(), 200, cors))(request);
     }
 
     return json({ error: "no_encontrado" }, 404, cors);
